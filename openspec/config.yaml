@@ -1,32 +1,65 @@
 schema: spec-driven
 
-# Project context (optional)
-# Add only constraints that should guide OpenSpec artifacts and workflows.
-# Include constraints an agent cannot infer by reading the code.
-# Keep general project documentation and discoverable codebase facts out.
-# Example:
-#   context: |
-#     Designs and tasks must cover Windows, macOS, and Linux
-#     Write all artifacts in Spanish
+context: |
+  greeter-acceptance: the channel-neutral acceptance suite for greeterHQ.
+  Hexagonal tests: Cucumber features describe behaviour once; step definitions
+  call only the GreeterDriver port; one driver adapter per channel translates
+  the port into that channel's idiom.
+  - Port (lib/greeter_acceptance/ports/greeter_driver.rb):
+    channel, capabilities, supports?(cap), greet(name, idempotency_key: nil)
+    -> GreetResult(message, guest_name, count, outcome), count_for(name),
+    last_error (neutral symbol: :invalid_name, :malformed_request, ...),
+    last_native_error, native_idiom_for?(error).
+  - Adapters (lib/greeter_acceptance/drivers/): CliDriver (spawns
+    `greeter <name>`; exit 2 = invalid_name; no counting) and HttpDriver
+    (POST /greetings over Net::HTTP; 422 invalid_name = invalid_name;
+    capabilities :counting, :idempotency). Later: WebDriver, MobileDriver, EventDriver.
+  - Drivers are BLACK-BOX. They never require greeter-core, greeter-cli or
+    greeter-http code, and never read another repo's lib/. They talk to a
+    process or a URL only.
+  - features/support/env.rb is the only composition root; it picks the driver
+    from GREETER_CHANNEL (cli|http). Other config: GREETER_CLI_DIR,
+    GREETER_CLI_CMD, GREETER_BASE_URL.
+  - Step definitions never mention exit codes, HTTP statuses, headers or JSON.
+  - Scenarios needing a capability are tagged @capability-<name>; drivers
+    without it record not_applicable, never failed or skipped.
+  - Every scenario carries @requirement-<slug> and @scenario-<slug>; every run
+    writes tmp/traceability.json in greeterhq.traceability.v1
+    (docs/traceability-schema.md).
+  - HttpDriver sends X-Greeter-Synthetic: true by default against any deployed stage.
+  - Consumers pin this repo by git tag (ACCEPTANCE_REF). Tags follow semver:
+    a new or stricter scenario that existing channels may fail is a minor bump
+    at least; a removed scenario or changed port method is major.
+  - From Card 3, HttpDriver is also the Pact consumer "greeter-acceptance" of
+    provider "greeter-http".
+  - Ruby 3.3.5, frozen_string_literal on every file, RuboCop clean. TDD: failing
+    test committed before the implementation.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always state what is out of scope
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Include "Non-goals" and "Channels affected" sections.
+    - State the semver impact on the suite's tag and which consumer repos must
+      bump ACCEPTANCE_REF.
+    - Never propose changes to greeter-core, greeter-cli or greeter-http from
+      here; if a channel misbehaves, describe the gap and stop.
+  specs:
+    - Write scenarios in channel-neutral language ("any channel", "a channel with counting").
+    - Put channel idioms (exit codes, statuses) in the driver requirements,
+      not in behaviour scenarios.
+    - Every new port method needs a requirement in the driver-contract capability.
+  design:
+    - Show the port method signatures before and after, and how each existing
+      driver implements any new method.
+  tasks:
+    - First task group is always "Red tests" (features, step definitions,
+      spec/drivers contract examples).
+    - Keep each task under two hours.
+    - Last task group is "Verify and docs" (run the suite with GREETER_CHANNEL=cli
+      and =http, check tmp/traceability.json against the schema, openspec validate).
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+operations:
+  apply:
+    guidance:
+      - Never edit features/ or spec/ during apply.
+      - If a scenario fails on a real channel, report which channel and why;
+        never weaken the scenario or special-case a channel in a step definition.
