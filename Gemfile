@@ -7,7 +7,7 @@ gem 'cucumber', '~> 9.2'
 gem 'rspec', '~> 3.13'
 
 group :development do
+  gem 'bundler-audit', require: false
   gem 'rubocop', require: false
   gem 'rubocop-rspec', require: false
-  gem 'bundler-audit', require: false
 end

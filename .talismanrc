@@ -49,6 +49,8 @@ fileignoreconfig:
   checksum: d48ac81ec022b040f1ac05525894fa5067e40c7651d1fbd2a427df5aa0907b69
 - filename: Gemfile.lock
   checksum: d4fc25d06bf20415caec59a40aa191999be9c7a9fda8bf64dec6642528c207fe
+- filename: features/step_definitions/greeting_steps.rb
+  checksum: 6065abaccad30aceb8f261bc9532de11e312b808ba7e1321fdfd0ca3a4b28e92
 - filename: openspec/changes/add-neutral-acceptance-suite/specs/driver-contract/spec.md
   checksum: a69506688fa35272d32257fc753404b501004a87b33849b7ca5563b7c6708f91
 - filename: openspec/changes/add-neutral-acceptance-suite/specs/greeting/spec.md
