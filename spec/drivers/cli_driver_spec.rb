@@ -2,7 +2,7 @@
 
 require_relative 'greeter_driver_contract'
 
-RSpec.describe 'CliDriver' do # rubocop:disable RSpec/DescribeClass
+RSpec.describe 'CliDriver' do
   subject(:driver) do
     GreeterAcceptance::Drivers::CliDriver.new(
       command: ENV.fetch('GREETER_CLI_CMD', 'greeter'),

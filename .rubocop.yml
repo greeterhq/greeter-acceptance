@@ -1,0 +1,34 @@
+plugins:
+  - rubocop-rspec
+
+AllCops:
+  TargetRubyVersion: 3.3
+  NewCops: enable
+  SuggestExtensions: false
+
+# Specs and the shared driver contract are naturally long example blocks.
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*'
+    - 'features/**/*'
+
+# Driver adapters translate a channel idiom in one place; a slightly longer
+# greet method reads more clearly than a scatter of tiny private helpers.
+Metrics/MethodLength:
+  Max: 20
+
+Metrics/AbcSize:
+  Max: 20
+
+# Example groups describe behaviour, not a single class.
+RSpec/DescribeClass:
+  Enabled: false
+
+# A contract example may assert a few facets of one behaviour together.
+RSpec/MultipleExpectations:
+  Max: 3
+
+# The composition root and small support modules don't each need a doc comment.
+Style/Documentation:
+  Exclude:
+    - 'features/support/**/*'

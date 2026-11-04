@@ -2,7 +2,7 @@
 
 require_relative 'greeter_driver_contract'
 
-RSpec.describe 'HttpDriver' do # rubocop:disable RSpec/DescribeClass
+RSpec.describe 'HttpDriver' do
   subject(:driver) do
     GreeterAcceptance::Drivers::HttpDriver.new(
       base_url: ENV.fetch('GREETER_BASE_URL', 'http://localhost:3000')

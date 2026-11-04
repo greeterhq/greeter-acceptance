@@ -49,8 +49,20 @@ fileignoreconfig:
   checksum: d48ac81ec022b040f1ac05525894fa5067e40c7651d1fbd2a427df5aa0907b69
 - filename: Gemfile.lock
   checksum: d4fc25d06bf20415caec59a40aa191999be9c7a9fda8bf64dec6642528c207fe
+- filename: docs/traceability-schema.md
+  checksum: 132d8857bb312507946191f2ce2fe4b67751813baf3c25b35269a0ea8b8e6b2e
 - filename: features/step_definitions/greeting_steps.rb
   checksum: 6065abaccad30aceb8f261bc9532de11e312b808ba7e1321fdfd0ca3a4b28e92
+- filename: features/support/env.rb
+  checksum: d52be5486709abf58222eb6cbd0f2808431b94bf8695473c0cffed8a87d8da70
+- filename: lib/greeter_acceptance/drivers/cli_driver.rb
+  checksum: b3e40d9e2d0b91fd87812030953246194317db0ded417ada13b6f97bf385e65b
+- filename: lib/greeter_acceptance/drivers/http_driver.rb
+  checksum: f2752f87447ee67544cb71307a7f095fbbae5ec752e12a94321414cabae70848
+- filename: lib/greeter_acceptance/ports/greeter_driver.rb
+  checksum: 6baab555d1215c801e3ef9ad5ce76f9832319d086aed446edade7c687dd08f0e
+- filename: lib/greeter_acceptance/trace.rb
+  checksum: dffbcc0e6b47cee512a7611e48d9f4019792d719f5b84a428251c70c77d74be7
 - filename: openspec/changes/add-neutral-acceptance-suite/specs/driver-contract/spec.md
   checksum: a69506688fa35272d32257fc753404b501004a87b33849b7ca5563b7c6708f91
 - filename: openspec/changes/add-neutral-acceptance-suite/specs/greeting/spec.md

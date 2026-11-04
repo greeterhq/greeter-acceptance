@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Merges per-channel traceability.json files into the cross-channel ledger.
+#
+# Usage:
+#   bin/merge-ledger tmp/traceability-cli.json tmp/traceability-http.json
+#   bin/merge-ledger            # defaults to the two files below if present
+
+$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+require 'greeter_acceptance/ledger'
+
+paths = ARGV.empty? ? Dir.glob('tmp/traceability-*.json') : ARGV
+
+if paths.empty?
+  warn 'No traceability files given and none found at tmp/traceability-*.json'
+  exit 1
+end
+
+output = GreeterAcceptance::Ledger.from_files(paths).write
+puts "Wrote #{output} from #{paths.join(', ')}"
