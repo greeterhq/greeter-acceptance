@@ -47,6 +47,8 @@ fileignoreconfig:
   checksum: c6bdd8aa10b8aa5ba3dde78a8ec8e3422c834d265433612d3ced275d12aa92db
 - filename: .kiro/skills/openspec-verify-change/SKILL.md
   checksum: d48ac81ec022b040f1ac05525894fa5067e40c7651d1fbd2a427df5aa0907b69
+- filename: README.md
+  checksum: 5e1a328d220c3d215ba9b27f1ec0c1e5835869102ea8057368fb8fa929961823
 - filename: Gemfile.lock
   checksum: d4fc25d06bf20415caec59a40aa191999be9c7a9fda8bf64dec6642528c207fe
 - filename: docs/traceability-schema.md
