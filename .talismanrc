@@ -65,14 +65,10 @@ fileignoreconfig:
   checksum: 6baab555d1215c801e3ef9ad5ce76f9832319d086aed446edade7c687dd08f0e
 - filename: lib/greeter_acceptance/trace.rb
   checksum: dffbcc0e6b47cee512a7611e48d9f4019792d719f5b84a428251c70c77d74be7
-- filename: openspec/changes/add-neutral-acceptance-suite/specs/driver-contract/spec.md
-  checksum: a69506688fa35272d32257fc753404b501004a87b33849b7ca5563b7c6708f91
-- filename: openspec/changes/add-neutral-acceptance-suite/specs/greeting/spec.md
-  checksum: 04d9d3e69280a0459420f38f6db328a61390043d92990e523cb26b21e681eba4
-- filename: openspec/changes/add-neutral-acceptance-suite/specs/traceability/spec.md
-  checksum: 3a6bc4c7e2dee30ec6b6596f824d27c1f18ec34674dadd23c9b7124d01ad8887
-- filename: openspec/changes/add-neutral-acceptance-suite/tasks.md
-  checksum: 36ac47e5ae7d6e9ce4098c191fb3e5e6fcc457a7e146cea6012e99f39eb3befc
-- filename: openspec/changes/add-neutral-acceptance-suite/design.md
-  checksum: 4a6d99338871231f76d12815a592fe57968c1ffbca3559a226cb7df787f7018a
+- filename: openspec/specs/driver-contract/spec.md
+  checksum: 1269d273b8c9e2f9d7d6e9f76808a172057adeb52fc3d174444b4d460e7963b2
+- filename: openspec/specs/traceability/spec.md
+  checksum: 295dd9bae4ab4c456a8ef126a7e46ce3eadbfcb7166c6e90dbc6e24418456ba4
+- filename: openspec/specs/greeting/spec.md
+  checksum: a555470128358725aa291dee644a18d385ac227b1517ea9777c88b831de05b5a
 version: ""
