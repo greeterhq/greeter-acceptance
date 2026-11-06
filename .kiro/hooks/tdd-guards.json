@@ -5,7 +5,7 @@
       "name": "run-related-spec-on-save",
       "description": "Run the unit suite whenever lib/ changes",
       "trigger": "PostFileSave",
-      "matcher": "lib/greeter_http/.*\\.rb$",
+      "matcher": "lib/greeter_acceptance/.*\\.rb$",
       "action": {
         "type": "command",
         "command": "source \"$HOME/.rvm/environments/ruby-3.3.13\" && bundle exec rspec --fail-fast --format progress"
