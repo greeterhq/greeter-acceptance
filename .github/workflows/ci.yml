@@ -1,0 +1,81 @@
+# .github/workflows/ci.yml
+#
+# Staged pipeline: lint runs first (cheap gate, fails fast); once it is green
+# the spec-gate runs. Arrows are `needs:` edges:
+#
+#   lint ──── spec-gate
+#
+#   lint        – RuboCop. Runs first; nothing else starts until it is green.
+#   spec-gate   – openspec validate.         needs: lint
+#
+# Ruby is pinned by the repo's .ruby-version (3.3.5).
+
+name: CI
+
+"on":
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+    branches: ["**"]
+
+# Cancel in-flight runs for the same ref so a fast-follow push doesn't queue.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUNDLE_JOBS: 4
+  BUNDLE_RETRY: 3
+  # Bundler must match `BUNDLED WITH` in Gemfile.lock.
+  BUNDLER_VERSION: "4.0.22"
+  # Pin the OpenSpec CLI so the spec-gate is reproducible (a floating @latest
+  # can add rules that fail the gate with no change to the repo). Keep in sync
+  # with the locally installed version; bump deliberately.
+  OPENSPEC_VERSION: "1.14.1"
+
+jobs:
+# ═════════════════════════════════════════════════════════════════════════════
+# LINTING
+# ═════════════════════════════════════════════════════════════════════════════
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler: ${{ env.BUNDLER_VERSION }}
+          bundler-cache: true
+
+      - name: Run RuboCop
+        run: |
+          bundle check
+          bundle exec rubocop \
+            --config .rubocop.yml \
+            --format github \
+            --debug
+
+# ═════════════════════════════════════════════════════════════════════════════
+# spec-gate  (OpenSpec structural validation — blocks merge if malformed)
+# ═════════════════════════════════════════════════════════════════════════════
+  spec-gate:
+    name: OpenSpec
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      - name: Install OpenSpec CLI (pinned)
+        run: npm install --global "@fission-ai/openspec@${{ env.OPENSPEC_VERSION }}"
+
+      - name: Validate all OpenSpec changes
+        run: openspec validate --all --strict --json --no-interactive
