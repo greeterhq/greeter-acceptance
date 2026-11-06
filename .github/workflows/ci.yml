@@ -8,7 +8,10 @@
 #   lint        – RuboCop. Runs first; nothing else starts until it is green.
 #   spec-gate   – openspec validate.         needs: lint
 #
-# Ruby is pinned by the repo's .ruby-version (3.3.5).
+# Ruby: CI tracks the latest 3.3.x patch (RUBY_VERSION below). Newer runner
+# images only build the latest patch of each series, so an exact patch pin would
+# break whenever a new patch ships. The repo's .ruby-version (3.3.13) remains
+# the local development pin.
 
 name: CI
 
@@ -29,6 +32,8 @@ env:
   BUNDLE_RETRY: 3
   # Bundler must match `BUNDLED WITH` in Gemfile.lock.
   BUNDLER_VERSION: "4.0.22"
+  # Latest patch of the 3.3 series; keep the minor in step with .ruby-version.
+  RUBY_VERSION: "3.3"
   # Pin the OpenSpec CLI so the spec-gate is reproducible (a floating @latest
   # can add rules that fail the gate with no change to the repo). Keep in sync
   # with the locally installed version; bump deliberately.
@@ -47,7 +52,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: .ruby-version
+          ruby-version: ${{ env.RUBY_VERSION }}
           bundler: ${{ env.BUNDLER_VERSION }}
           bundler-cache: true
 

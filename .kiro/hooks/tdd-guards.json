@@ -8,7 +8,7 @@
       "matcher": "lib/greeter_http/.*\\.rb$",
       "action": {
         "type": "command",
-        "command": "source \"$HOME/.rvm/environments/ruby-3.3.5\" && bundle exec rspec --fail-fast --format progress"
+        "command": "source \"$HOME/.rvm/environments/ruby-3.3.13\" && bundle exec rspec --fail-fast --format progress"
       },
       "timeout": 120
     },
@@ -18,7 +18,7 @@
       "matcher": "\\.rb$",
       "action": {
         "type": "command",
-        "command": "source \"$HOME/.rvm/environments/ruby-3.3.5\" && bundle exec rubocop -A --fail-level E"
+        "command": "source \"$HOME/.rvm/environments/ruby-3.3.13\" && bundle exec rubocop -A --fail-level E"
       }
     },
     {
@@ -28,7 +28,7 @@
       "matcher": "fs_write|str_replace|fs_append",
       "action": {
         "type": "command",
-        "command": "source \"$HOME/.rvm/environments/ruby-3.3.5\" && bin/guard-test-edits"
+        "command": "source \"$HOME/.rvm/environments/ruby-3.3.13\" && bin/guard-test-edits"
       }
     },
     {
@@ -36,7 +36,7 @@
       "trigger": "Stop",
       "action": {
         "type": "command",
-        "command": "source \"$HOME/.rvm/environments/ruby-3.3.5\" && mkdir -p tmp && ruby -v > tmp/hook-ruby.txt && which bundle >> tmp/hook-ruby.txt"
+        "command": "source \"$HOME/.rvm/environments/ruby-3.3.13\" && mkdir -p tmp && ruby -v > tmp/hook-ruby.txt && which bundle >> tmp/hook-ruby.txt"
       },
       "enabled": true
     },
@@ -45,7 +45,7 @@
       "trigger": "Stop",
       "action": {
         "type": "command",
-        "command": "source \"$HOME/.rvm/environments/ruby-3.3.5\" && bundle exec rspec && bundle exec cucumber && openspec validate --all --strict --no-interactive"
+        "command": "source \"$HOME/.rvm/environments/ruby-3.3.13\" && bundle exec rspec && bundle exec cucumber && openspec validate --all --strict --no-interactive"
       },
       "timeout": 300
     }

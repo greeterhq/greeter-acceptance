@@ -50,7 +50,7 @@ fileignoreconfig:
 - filename: README.md
   checksum: 5e1a328d220c3d215ba9b27f1ec0c1e5835869102ea8057368fb8fa929961823
 - filename: Gemfile.lock
-  checksum: d4fc25d06bf20415caec59a40aa191999be9c7a9fda8bf64dec6642528c207fe
+  checksum: 8f05d4164edd58c08fd03f42e536f7364c2e2e7017ea5f514a333ae596b78dce
 - filename: docs/traceability-schema.md
   checksum: 132d8857bb312507946191f2ce2fe4b67751813baf3c25b35269a0ea8b8e6b2e
 - filename: features/step_definitions/greeting_steps.rb

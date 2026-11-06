@@ -32,7 +32,7 @@ context: |
     at least; a removed scenario or changed port method is major.
   - From Card 3, HttpDriver is also the Pact consumer "greeter-acceptance" of
     provider "greeter-http".
-  - Ruby 3.3.5, frozen_string_literal on every file, RuboCop clean. TDD: failing
+  - Ruby 3.3.13, frozen_string_literal on every file, RuboCop clean. TDD: failing
     test committed before the implementation.
 
 rules:

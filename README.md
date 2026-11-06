@@ -67,7 +67,7 @@ bin/merge-ledger              derives tmp/ledger.json from the per-channel trace
 
 ## Requirements
 
-- Ruby 3.3.5
+- Ruby 3.3.13
 - Bundler
 - A channel to drive:
   - **cli** — the `greeter` CLI on `PATH` (or pointed at by `GREETER_CLI_CMD`).
