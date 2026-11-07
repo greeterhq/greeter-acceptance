@@ -65,6 +65,16 @@ fileignoreconfig:
   checksum: 6baab555d1215c801e3ef9ad5ce76f9832319d086aed446edade7c687dd08f0e
 - filename: lib/greeter_acceptance/trace.rb
   checksum: dffbcc0e6b47cee512a7611e48d9f4019792d719f5b84a428251c70c77d74be7
+- filename: openspec/changes/publish-channel-ledger/specs/driver-contract/spec.md
+  checksum: a90ccfeb9e264929eff467549b5d4537f00087261610270cf92669ba62371d20
+- filename: openspec/changes/publish-channel-ledger/proposal.md
+  checksum: 29e9825a47dbdeec6ee88a52eaf468dbe5ed00944cd480a1289e18b2038341d6
+- filename: openspec/changes/publish-channel-ledger/specs/traceability/spec.md
+  checksum: c7393546b4c7ac30f42e28355992f88fa85eb750eeba80c4d342cb2cfd792247
+- filename: openspec/changes/publish-channel-ledger/design.md
+  checksum: aea5ebfe988c69cf548fb548b64ee75fffae3a9ceb55fc175490883c80449049
+- filename: openspec/changes/publish-channel-ledger/tasks.md
+  checksum: 2fa76f590ef06ff3c600d169b319f4d894364771bc361e98cbd4b37ab5e9736a
 - filename: openspec/specs/driver-contract/spec.md
   checksum: 1269d273b8c9e2f9d7d6e9f76808a172057adeb52fc3d174444b4d460e7963b2
 - filename: openspec/specs/traceability/spec.md
