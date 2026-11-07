@@ -10,7 +10,7 @@ RSpec.shared_examples 'a GreeterDriver' do
   describe 'port surface' do
     %i[
       channel capabilities supports? greet count_for
-      last_error last_native_error native_idiom_for?
+      last_error last_native_error native_idiom_for? build_info
     ].each do |method_name|
       it "responds to #{method_name}" do
         expect(driver).to respond_to(method_name)
@@ -67,5 +67,37 @@ RSpec.shared_examples 'a GreeterDriver' do
 
       expect(driver.count_for(guest)).to eq(1)
     end
+  end
+
+  describe 'build information' do
+    it 'reports channel and core versions, or nil when the channel does not report them' do
+      expect(driver.build_info).to be_nil.or(respond_to(:channel_version, :core_version))
+    end
+
+    it 'changes no count when it is requested' do
+      skip 'driver does not support counting' unless driver.supports?(:counting)
+
+      driver.greet(guest)
+      driver.build_info
+
+      expect(driver.count_for(guest)).to eq(1)
+    end
+  end
+end
+
+# Shared contract for a driver whose channel cannot be reached. Including
+# context must define `unreachable_driver`.
+RSpec.shared_examples 'a driver whose channel is unreachable' do
+  it 'returns the infrastructure_error outcome instead of raising' do
+    result = nil
+
+    expect { result = unreachable_driver.greet('Ada') }.not_to raise_error
+    expect(result.outcome).to eq(:infrastructure_error)
+  end
+
+  it 'exposes infrastructure_error as the last neutral error' do
+    unreachable_driver.greet('Ada')
+
+    expect(unreachable_driver.last_error).to eq(:infrastructure_error)
   end
 end

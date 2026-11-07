@@ -81,4 +81,26 @@ fileignoreconfig:
   checksum: 295dd9bae4ab4c456a8ef126a7e46ce3eadbfcb7166c6e90dbc6e24418456ba4
 - filename: openspec/specs/greeting/spec.md
   checksum: a555470128358725aa291dee644a18d385ac227b1517ea9777c88b831de05b5a
+- filename: spec/environments_spec.rb
+  checksum: 9e8c9b4e84d9e5afb46f1647d8952f1239deeb594557cebe2c209dd5f1c428e3
+- filename: spec/ledger_renderer_spec.rb
+  checksum: c0b56045f31d85666f32ce81fc8e8daca706b8308572aadcba1e9edbc0718eb9
+- filename: spec/observed_driver_spec.rb
+  checksum: dae09a1f6c4c432e0dd46f94140f78c3bc9c028e5c2673524173f7c73079733b
+- filename: spec/ledger_spec.rb
+  checksum: 6b1331152a3d40b4c7c34af03bd26f3de93a08bb698aa4abcf0d13a80d9fa94a
+- filename: spec/deployed_spec.rb
+  checksum: 2799ace108440816a53e43ea7e547a159af9bbef63755cda97fe479681e26ea9
+- filename: spec/support/ledger_fixtures.rb
+  checksum: b77d6ea84f439b390085bee93e817e5dc4344c5c07905abdb3e81dfd7c773f68
+- filename: spec/publisher_guards_spec.rb
+  checksum: 76060899c713610ee51b5c3c2fd66fba50120f85fd96b2bdd3bf1100ea2db99e
+- filename: spec/event_validation_spec.rb
+  checksum: aa690b4c0cacd5d80a88ac0a4ceaad754abe45f61f154f2d02c0841eeef97704
+- filename: spec/publisher_spec.rb
+  checksum: 59acb221ce30fc60feca28ba40a359185caa8ed8a06099f5a580294a7214d614
+- filename: spec/support/ledger_remote_context.rb
+  checksum: 95339f64d17e3cdec7cb8aecd4dcf22d69120e4e31cb4c3e2c595d2705a104ec
+- filename: spec/gate_verdict_spec.rb
+  checksum: d04ff6f88187d9bf22d8b97c183594b6eba5f990e86dd44c95952a69a6f75ac6
 version: ""

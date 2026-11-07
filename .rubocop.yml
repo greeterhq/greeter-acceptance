@@ -28,6 +28,14 @@ RSpec/DescribeClass:
 RSpec/MultipleExpectations:
   Max: 3
 
+# Tooling specs build documents and drive a local git remote; setup lines and
+# shared fixtures are part of the example, not noise.
+RSpec/ExampleLength:
+  Max: 12
+
+RSpec/MultipleMemoizedHelpers:
+  Max: 8
+
 # The composition root and small support modules don't each need a doc comment.
 Style/Documentation:
   Exclude:

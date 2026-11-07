@@ -13,63 +13,63 @@ Notes for whoever applies this change:
 
 ## 1. Red tests
 
-- [ ] 1.1 Write `spec/composition_root_spec.rb`: `build_driver(env:)` returns the
+- [x] 1.1 Write `spec/composition_root_spec.rb`: `build_driver(env:)` returns the
   cli driver for `cli`, the http driver for `http`, and refuses an unset or
   unknown `GREETER_CHANNEL` and a missing `GREETER_BASE_URL` with a clear
   message; `build_observed_driver` wraps the driver; `channels` is `cli`, `http`.
   Verify it fails with `NameError` for `CompositionRoot`, not a syntax error.
-- [ ] 1.2 Extend the driver contract (`spec/drivers/greeter_driver_contract.rb`)
+- [x] 1.2 Extend the driver contract (`spec/drivers/greeter_driver_contract.rb`)
   and the cli and http driver specs: the port surface includes `build_info`;
   `build_info` returns a value with channel and core versions or nil and changes
   no count; a driver pointed at an unreachable channel (nonexistent command,
   `http://127.0.0.1:1`) returns the `infrastructure_error` outcome and does not
   raise. Verify the new examples fail on the missing `build_info` and on the
   raised error, and that the existing examples are unchanged.
-- [ ] 1.3 Write `spec/observed_driver_spec.rb`: the decorator forwards every port
+- [x] 1.3 Write `spec/observed_driver_spec.rb`: the decorator forwards every port
   method, records an infrastructure error even when a later greet succeeds, and
   collects `build_info`. Verify it fails with `NameError`.
-- [ ] 1.4 Write `spec/run_record_spec.rb`: scenario status maps to passed, failed
+- [x] 1.4 Write `spec/run_record_spec.rb`: scenario status maps to passed, failed
   or error (an observed infrastructure error wins over a failed assertion); a
   gated scenario is not applicable; verification is verified, mismatch,
   inconsistent or unobserved; the trace v2 document carries the run context
   (suite version, channel version and sha, core version, environment, recording
   time, run id). Verify it fails with `NameError`.
-- [ ] 1.5 Write `spec/ledger_spec.rb` for `greeterhq.ledger.v2`: cell statuses
+- [x] 1.5 Write `spec/ledger_spec.rb` for `greeterhq.ledger.v2`: cell statuses
   including `error` and `missing`; a requirement with no row is missing, not not
   applicable; a known channel with no file has every cell missing; column state
   is current, stale for an older suite, stale for a moved-on deployed version, or
   missing; the requirement list comes from `@requirement-*` tags; output is
   identical across runs and input orders. Verify it fails with `NameError`.
-- [ ] 1.6 Write `spec/ledger_renderer_spec.rb` for `LEDGER.md`: a context header
+- [x] 1.6 Write `spec/ledger_renderer_spec.rb` for `LEDGER.md`: a context header
   per column, stale columns marked, missing shown, markup in versions rendered as
   plain text, deterministic output. Verify it fails with `NameError`.
-- [ ] 1.7 Write `spec/deployed_spec.rb` for `greeterhq.deployed.v1`: a keyed
+- [x] 1.7 Write `spec/deployed_spec.rb` for `greeterhq.deployed.v1`: a keyed
   update changes only that channel's entry, and the update happens whatever the
   result status was. Verify it fails with `NameError`.
-- [ ] 1.8 Write `spec/environments_spec.rb` and `spec/event_validation_spec.rb`:
+- [x] 1.8 Write `spec/environments_spec.rb` and `spec/event_validation_spec.rb`:
   targets resolve from the committed config; a supplied address is refused; the
   host must match the environment's pattern; unknown environments and channels
   are named and refused; an event with an unknown channel or environment, or a
   malformed version or sha, is refused. Verify both fail with `NameError`.
-- [ ] 1.9 Write `spec/resolver_spec.rb`: a channel-released event yields a matrix
+- [x] 1.9 Write `spec/resolver_spec.rb`: a channel-released event yields a matrix
   of one channel; a new suite tag yields every channel named in `deployed.json`;
   a manual run takes the event's fields and a rerun-all option; the latest
   published suite tag is chosen, not the default branch head. Verify it fails
   with `NameError`.
-- [ ] 1.10 Write `spec/publisher_spec.rb` against a local bare git repository:
+- [x] 1.10 Write `spec/publisher_spec.rb` against a local bare git repository:
   publishing writes only the channel's own file and its deployed entry, then
   regenerates the generated views; two publishers for different channels
   converge to a ledger containing both; a rejected push is retried by
   re-reading, re-applying and regenerating, never rebasing; no difference means
   no commit; the first publish creates the branch. Verify it fails with
   `NameError`.
-- [ ] 1.11 Write `spec/publisher_guards_spec.rb`: an older channel version is
+- [x] 1.11 Write `spec/publisher_guards_spec.rb`: an older channel version is
   refused and an equal or newer one replaces; an older suite version cannot
   lower the ledger's suite version; force overrides both and records the actor;
   a non-semver version is refused; unknown result fields are dropped; a result
   naming another channel is refused; oversized input is refused. Verify it fails
   with `NameError`.
-- [ ] 1.12 Write `spec/gate_verdict_spec.rb`: failed or error rows fail the gate;
+- [x] 1.12 Write `spec/gate_verdict_spec.rb`: failed or error rows fail the gate;
   mismatch and inconsistent fail it; unobserved fails unless unverified is
   allowed, which marks the result unverified; not applicable never fails; a
   missing acceptance reference fails. Verify it fails with `NameError`.

@@ -11,6 +11,14 @@ RSpec.describe 'HttpDriver' do
 
   it_behaves_like 'a GreeterDriver'
 
+  describe 'when the service cannot be reached' do
+    let(:unreachable_driver) do
+      GreeterAcceptance::Drivers::HttpDriver.new(base_url: 'http://127.0.0.1:1')
+    end
+
+    it_behaves_like 'a driver whose channel is unreachable'
+  end
+
   it 'declares counting and idempotency' do
     expect(driver.capabilities).to eq(Set[:counting, :idempotency])
   end
