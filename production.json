@@ -1,0 +1,5 @@
+{
+  "schema": "greeterhq.production.v1",
+  "environment": "stage",
+  "channels": {}
+}
