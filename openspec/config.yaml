@@ -8,8 +8,9 @@ context: |
   - Port (lib/greeter_acceptance/ports/greeter_driver.rb):
     channel, capabilities, supports?(cap), greet(name, idempotency_key: nil)
     -> GreetResult(message, guest_name, count, outcome), count_for(name),
-    last_error (neutral symbol: :invalid_name, :malformed_request, ...),
-    last_native_error, native_idiom_for?(error).
+    last_error (neutral symbol: :invalid_name, :infrastructure_error, ...),
+    last_native_error, native_idiom_for?(error), build_info (channel and core
+    versions, or nil).
   - Adapters (lib/greeter_acceptance/drivers/): CliDriver (spawns
     `greeter <name>`; exit 2 = invalid_name; no counting) and HttpDriver
     (POST /greetings over Net::HTTP; 422 invalid_name = invalid_name;
@@ -17,14 +18,15 @@ context: |
   - Drivers are BLACK-BOX. They never require greeter-core, greeter-cli or
     greeter-http code, and never read another repo's lib/. They talk to a
     process or a URL only.
-  - features/support/env.rb is the only composition root; it picks the driver
-    from GREETER_CHANNEL (cli|http). Other config: GREETER_CLI_DIR,
-    GREETER_CLI_CMD, GREETER_BASE_URL.
+  - lib/greeter_acceptance/composition_root.rb is the only place a driver is
+    constructed; it picks the driver from GREETER_CHANNEL (cli|http).
+    features/support/env.rb and bin/* only call it. Other config:
+    GREETER_CLI_DIR, GREETER_CLI_CMD, GREETER_BASE_URL.
   - Step definitions never mention exit codes, HTTP statuses, headers or JSON.
   - Scenarios needing a capability are tagged @capability-<name>; drivers
     without it record not_applicable, never failed or skipped.
   - Every scenario carries @requirement-<slug> and @scenario-<slug>; every run
-    writes tmp/traceability.json in greeterhq.traceability.v1
+    writes tmp/traceability.json in greeterhq.traceability.v2
     (docs/traceability-schema.md).
   - HttpDriver sends X-Greeter-Synthetic: true by default against any deployed stage.
   - Consumers pin this repo by git tag (ACCEPTANCE_REF). Tags follow semver:

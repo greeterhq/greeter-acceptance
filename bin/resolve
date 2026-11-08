@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Decides what a record run has to test, and which suite version to run it with.
+# Standard library only. Prints JSON:
+#   { "suite_tag": "v0.2.0", "matrix": { "include": [ { "channel": ..., ... } ] } }
+#
+# Usage:
+#   bin/resolve --trigger channel_released --payload event.json
+#   bin/resolve --trigger suite_tag --deployed prod=deployed-prod.json --deployed stage=deployed-stage.json
+#   bin/resolve --trigger manual --payload inputs.json [--rerun-all] [--deployed ENV=FILE ...]
+#
+# Options:
+#   --config FILE   committed configuration (default config/environments.yml)
+#   --tags FILE     one git tag per line (default: git tag --list)
+#
+# A payload that cannot be validated stops the run with a message on stderr and
+# a non-zero exit; nothing is printed to stdout.
+
+require 'json'
+require 'optparse'
+
+$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+require 'greeter_acceptance/environments'
+require 'greeter_acceptance/resolver'
+
+options = { config: 'config/environments.yml', deployed: {}, rerun_all: false }
+begin
+  OptionParser.new do |parser|
+    parser.on('--config FILE') { |value| options[:config] = value }
+    parser.on('--trigger NAME') { |value| options[:trigger] = value.to_sym }
+    parser.on('--payload FILE') { |value| options[:payload] = JSON.parse(File.read(value)) }
+    parser.on('--deployed ENV=FILE') do |value|
+      environment, file = value.split('=', 2)
+      options[:deployed][environment] = JSON.parse(File.read(file))
+    end
+    parser.on('--rerun-all') { options[:rerun_all] = true }
+    parser.on('--tags FILE') { |value| options[:tags] = File.read(value).split }
+  end.parse!
+rescue JSON::ParserError, SystemCallError, OptionParser::ParseError => e
+  abort "bin/resolve: #{e.message.lines.first.to_s.strip}"
+end
+
+abort 'bin/resolve: --trigger is required' unless options[:trigger]
+
+begin
+  environments = GreeterAcceptance::Environments.load(options[:config])
+  matrix = GreeterAcceptance::Resolver.new(environments: environments).matrix(
+    trigger: options[:trigger], payload: options.fetch(:payload, {}),
+    deployed: options[:deployed], rerun_all: options[:rerun_all]
+  )
+  # Add each entry's target from the committed configuration. This also checks the
+  # host against the environment's pattern, before any request is ever made.
+  matrix = matrix.map do |entry|
+    target = environments.resolve(environment: entry['environment'], channel: entry['channel'])
+    entry.merge('base_url' => target.base_url, 'repo' => target.repo)
+  end
+  tags = options[:tags] || `git tag --list`.split
+  puts JSON.pretty_generate(
+    'suite_tag' => GreeterAcceptance::Resolver.latest_suite_tag(tags), 'matrix' => { 'include' => matrix }
+  )
+rescue GreeterAcceptance::EventValidation::Invalid, GreeterAcceptance::Environments::Refused => e
+  abort "bin/resolve: #{e.message}"
+end

@@ -28,6 +28,11 @@ RSpec/DescribeClass:
 RSpec/MultipleExpectations:
   Max: 3
 
+# Keyword arguments are how these classes take their context; only positional
+# parameter lists are worth limiting.
+Metrics/ParameterLists:
+  CountKeywordArgs: false
+
 # Tooling specs build documents and drive a local git remote; setup lines and
 # shared fixtures are part of the example, not noise.
 RSpec/ExampleLength:

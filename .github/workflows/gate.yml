@@ -1,0 +1,203 @@
+# .github/workflows/gate.yml
+#
+# The acceptance gate: a reusable workflow that a channel's release pipeline calls
+# to prove a candidate release passes the channel-neutral suite BEFORE it is
+# published or promoted. It is read-only and never writes to a ledger branch.
+#
+# How a channel repo calls it from its release workflow:
+#
+#   jobs:
+#     build:
+#       ...                       # builds the tarball and uploads it as an artifact
+#     gate:
+#       needs: build
+#       uses: greeterhq/greeter-acceptance/.github/workflows/gate.yml@v1
+#       with:
+#         acceptance_ref: v0.2.0  # the suite version this repo pins (ACCEPTANCE_REF)
+#         channel: cli
+#         candidate_version: v0.1.3
+#         candidate_sha: ${{ github.sha }}
+#         artifact_name: dist
+#         artifact_file: greeter-cli-v0.1.3.tar.gz
+#     release:
+#       needs: gate               # the release does not run if the gate fails
+#
+# A job's `uses:` ref has to be a literal, so it cannot be the pinned suite
+# version. This file is therefore a thin shim: it checks out `acceptance_ref` and
+# runs everything from there, so what the gate does is pinned by that input
+# whichever version of this file is called.
+#
+# Artifact channel (cli): the caller uploads its built tarball as an artifact and
+# names it. The gate unpacks it and runs the suite against it, under the Ruby the
+# tarball's Gemfile declares.
+# Service channel (http): the gate runs against the candidate's stage environment,
+# resolved from the committed configuration. The caller must have deployed the
+# candidate to stage first. The target is never taken from an input.
+#
+# The channel values below must be kept in step with CompositionRoot.channels.
+
+name: Acceptance gate
+
+"on":
+  workflow_call:
+    inputs:
+      acceptance_ref:
+        description: "The released suite version to run, e.g. v0.2.0 (the caller's pinned ACCEPTANCE_REF)"
+        type: string
+        required: true
+      channel:
+        description: "The channel being gated: cli or http"
+        type: string
+        required: true
+      candidate_version:
+        description: "The candidate's version, e.g. v1.2.3"
+        type: string
+        required: true
+      candidate_sha:
+        description: "The candidate's commit (7 to 40 lowercase hex characters)"
+        type: string
+        required: true
+      environment:
+        description: "For a service channel, the environment the candidate is deployed to"
+        type: string
+        default: stage
+      artifact_name:
+        description: "For an artifact channel, the name of the artifact the caller uploaded"
+        type: string
+        default: ""
+      artifact_file:
+        description: "For an artifact channel, the tarball's file name inside that artifact"
+        type: string
+        default: ""
+      allow_unverified:
+        description: "Pass the version check when the channel reports no version (the result is marked unverified)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Gate (${{ inputs.channel }})
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check the inputs
+        env:
+          ACCEPTANCE_REF: ${{ inputs.acceptance_ref }}
+          CHANNEL: ${{ inputs.channel }}
+          CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          ARTIFACT_NAME: ${{ inputs.artifact_name }}
+          ARTIFACT_FILE: ${{ inputs.artifact_file }}
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+          [[ "$ACCEPTANCE_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "acceptance_ref must be a released suite version such as v0.2.0"
+          [[ "$CHANNEL" =~ ^(cli|http)$ ]] || fail "channel must be cli or http"
+          [[ "$CANDIDATE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "candidate_version must look like v1.2.3"
+          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{7,40}$ ]] || fail "candidate_sha must be 7 to 40 lowercase hex characters"
+          if [ "$CHANNEL" = "cli" ]; then
+            [[ "$ARTIFACT_NAME" =~ ^[A-Za-z0-9._-]+$ ]] || fail "an artifact channel needs artifact_name"
+            [[ "$ARTIFACT_FILE" =~ ^[A-Za-z0-9._-]+$ ]] || fail "an artifact channel needs artifact_file"
+          fi
+
+      # The suite, at exactly the version the caller pinned.
+      - uses: actions/checkout@v5
+        with:
+          repository: greeterhq/greeter-acceptance
+          ref: ${{ inputs.acceptance_ref }}
+          persist-credentials: false
+
+      - name: Set up the suite's Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      # ── artifact channel ────────────────────────────────────────────────────
+      - name: Download the candidate artifact
+        if: inputs.channel == 'cli'
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: tmp/artifact
+
+      - name: Unpack the candidate and read the Ruby it declares
+        if: inputs.channel == 'cli'
+        id: cli
+        env:
+          ARTIFACT_FILE: ${{ inputs.artifact_file }}
+        run: |
+          dir="$(ruby bin/cli-release extract --tarball "tmp/artifact/$ARTIFACT_FILE" --out tmp/cli)"
+          declared="$(ruby bin/cli-release ruby-version "$dir")"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+          echo "ruby=${declared:-3.3}" >> "$GITHUB_OUTPUT"
+
+      # The candidate runs under the Ruby its own Gemfile declares, through its
+      # own bundle, not under the suite's.
+      - name: Set up the Ruby the candidate declares
+        if: inputs.channel == 'cli'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ steps.cli.outputs.ruby }}
+
+      - name: Install the candidate and write its launcher
+        if: inputs.channel == 'cli'
+        id: launcher
+        env:
+          CLI_DIR: ${{ steps.cli.outputs.dir }}
+        run: echo "path=$(ruby bin/cli-release install "$CLI_DIR" --launcher "$RUNNER_TEMP/greeter-launch")" >> "$GITHUB_OUTPUT"
+
+      - name: Go back to the suite's Ruby
+        if: inputs.channel == 'cli'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      # ── service channel ─────────────────────────────────────────────────────
+      - name: Resolve the target from the committed configuration
+        if: inputs.channel == 'http'
+        id: target
+        env:
+          CHANNEL: ${{ inputs.channel }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          ruby -rjson -e 'puts JSON.generate("channel" => ENV["CHANNEL"], "version" => ENV["CANDIDATE_VERSION"], "sha" => ENV["CANDIDATE_SHA"], "environment" => ENV["ENVIRONMENT"])' > "$RUNNER_TEMP/event.json"
+          ruby bin/resolve --trigger channel_released --payload "$RUNNER_TEMP/event.json" --tags /dev/null > "$RUNNER_TEMP/resolved.json"
+          echo "base_url=$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["matrix"]["include"][0]["base_url"]' "$RUNNER_TEMP/resolved.json")" >> "$GITHUB_OUTPUT"
+
+      # ── run and judge ───────────────────────────────────────────────────────
+      - name: Run the suite against the candidate
+        id: suite
+        env:
+          GREETER_CHANNEL: ${{ inputs.channel }}
+          GREETER_ENVIRONMENT: ${{ inputs.environment }}
+          GREETER_EXPECTED_VERSION: ${{ inputs.candidate_version }}
+          GREETER_EXPECTED_SHA: ${{ inputs.candidate_sha }}
+          GREETER_BASE_URL: ${{ steps.target.outputs.base_url }}
+          GREETER_CLI_CMD: ${{ steps.launcher.outputs.path }}
+        run: bundle exec cucumber --format progress
+
+      - name: Decide the gate
+        if: always() && steps.suite.outcome != 'skipped'
+        env:
+          ACCEPTANCE_REF: ${{ inputs.acceptance_ref }}
+          CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+          ALLOW_UNVERIFIED: ${{ inputs.allow_unverified }}
+        run: |
+          flags=()
+          if [ "$ALLOW_UNVERIFIED" = "true" ]; then flags+=(--allow-unverified); fi
+          bin/gate-verdict --acceptance-ref "$ACCEPTANCE_REF" --expected-version "$CANDIDATE_VERSION" "${flags[@]}"
+
+      - name: Keep the trace
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: gate-trace-${{ inputs.channel }}
+          path: tmp/traceability.json
+          if-no-files-found: ignore
+          retention-days: 14

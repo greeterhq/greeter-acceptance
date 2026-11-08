@@ -75,7 +75,7 @@ RSpec.describe 'Publisher guards' do
   describe 'untrusted results' do
     def publish_tampered(channel: 'http')
       result = trace_doc(channel: 'http')
-      yield result
+      yield result if block_given?
       deployment = { 'version' => 'v1.2.3', 'sha' => 'def4567', 'run_id' => '1' }
       build_publisher.publish(channel: channel, result: result, deployment: deployment)
     end

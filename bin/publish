@@ -1,0 +1,81 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Publishes one channel's result to a ledger branch. Standard library only: this is
+# the one stage with write access, and it installs no gems and runs no code from
+# the channel under test. The result file is data; it is validated, rebuilt, and
+# never evaluated.
+#
+# Usage:
+#   bin/publish --remote URL --branch ledger-prod --environment prod \
+#               --suite-version v0.2.0 --channel http --result result.json \
+#               --version v1.2.3 --sha def4567 [--run-id ID] [--artifact tag] \
+#   (use --no-result instead of --result when the run produced no result: only
+#   the deployed record is updated)
+#               [--features DIR] [--max-attempts N] [--max-result-bytes N] \
+#               [--force --actor NAME]
+#
+# Prints "committed" or "unchanged". A result that is refused, or a branch that
+# keeps moving, stops with a message on stderr and a non-zero exit.
+
+require 'json'
+require 'optparse'
+
+$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+require 'greeter_acceptance/composition_root'
+require 'greeter_acceptance/ledger'
+require 'greeter_acceptance/publisher'
+
+options = { features: 'features', max_attempts: 5, max_result_bytes: 1_048_576, force: false }
+OptionParser.new do |parser|
+  parser.on('--remote URL') { |value| options[:remote] = value }
+  parser.on('--branch NAME') { |value| options[:branch] = value }
+  parser.on('--environment NAME') { |value| options[:environment] = value }
+  parser.on('--suite-version VERSION') { |value| options[:suite_version] = value }
+  parser.on('--channel NAME') { |value| options[:channel] = value }
+  parser.on('--result FILE') { |value| options[:result] = value }
+  parser.on('--no-result') { options[:no_result] = true }
+  parser.on('--version VERSION') { |value| options[:version] = value }
+  parser.on('--sha SHA') { |value| options[:sha] = value }
+  parser.on('--run-id ID') { |value| options[:run_id] = value }
+  parser.on('--artifact NAME') { |value| options[:artifact] = value }
+  parser.on('--features DIR') { |value| options[:features] = value }
+  parser.on('--max-attempts N', Integer) { |value| options[:max_attempts] = value }
+  parser.on('--max-result-bytes N', Integer) { |value| options[:max_result_bytes] = value }
+  parser.on('--force') { options[:force] = true }
+  parser.on('--actor NAME') { |value| options[:actor] = value }
+end.parse!
+
+required = %i[remote branch environment suite_version channel version sha]
+missing = required.reject { |key| options[key] }
+abort "bin/publish: missing #{missing.map { |key| "--#{key.to_s.tr('_', '-')}" }.join(', ')}" unless missing.empty?
+unless options[:result] || options[:no_result]
+  abort 'bin/publish: give --result FILE, or --no-result to record only the deployment'
+end
+
+begin
+  result = options[:no_result] ? nil : JSON.parse(File.read(options[:result]))
+rescue JSON::ParserError
+  abort 'bin/publish: the result file is not valid JSON'
+end
+
+publisher = GreeterAcceptance::Publisher.new(
+  remote: options[:remote], branch: options[:branch], environment: options[:environment],
+  suite_version: options[:suite_version], channels: GreeterAcceptance::CompositionRoot.channels,
+  requirements: GreeterAcceptance::Ledger.requirements_from_features(options[:features]),
+  max_attempts: options[:max_attempts], max_result_bytes: options[:max_result_bytes]
+)
+
+begin
+  outcome = publisher.publish(
+    channel: options[:channel], result: result, force: options[:force], actor: options[:actor],
+    deployment: {
+      'version' => options[:version], 'sha' => options[:sha],
+      'run_id' => options[:run_id], 'artifact' => options[:artifact]
+    }
+  )
+  puts outcome
+rescue GreeterAcceptance::Publisher::Refused, GreeterAcceptance::Publisher::PushRejected,
+       GreeterAcceptance::Publisher::Git::Failure => e
+  abort "bin/publish: #{e.message}"
+end
