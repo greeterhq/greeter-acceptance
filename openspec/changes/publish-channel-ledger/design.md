@@ -199,12 +199,19 @@ has three stages:
                                  tag, build the matrix (from deployed.json for a
                                  new tag or rerun_all)
  run       contents: read        checkout the tag with persist-credentials: false;
+                                 check GreeterAcceptance::VERSION equals the tag;
                                  fetch + verify the artifact (checksum, tag -> sha);
                                  run the suite; upload the result as an artifact
- publish   contents: write       checkout the tag; stdlib Ruby only, no bundle
-                                 install; treat the artifact as data; regenerate;
-                                 push the ledger branch
+ publish   contents: read;       checkout the tag; stdlib Ruby only, no bundle
+           pushes with a         install; treat the artifact as data; regenerate;
+           greeterhq-ledger-     push the ledger branch
+           writer App token
+           minted in the
+           ledger environment
 ```
+
+The `run` stage's version check reads `GreeterAcceptance::VERSION`
+(`lib/greeter_acceptance/version.rb`); there is no separate `VERSION` file.
 
 The token is not in the environment of any step that executes downloaded code.
 `publish` runs with `!cancelled()` so that an errored run still updates
@@ -218,6 +225,26 @@ shim version is called. A reusable workflow runs on its own runner, so an
 artifact channel's caller uploads its tarball and passes the artifact name. The
 verdict script fails on any `failed` or `error` row, on `mismatch` or
 `inconsistent`, and on `unobserved` unless the caller passes `allow_unverified`.
+
+### The ledger is written by an App token, not `GITHUB_TOKEN`
+
+`publish` runs in the `ledger` environment, which holds the
+greeterhq-ledger-writer App's credentials. Its first step mints an App token
+with `permission-contents: write` for `greeterhq/greeter-acceptance` only, and
+that token is the one handed to git for the push. The job's own `GITHUB_TOKEN`
+stays `contents: read`.
+
+Why:
+
+- Only that identity can write to the ledger branches, so the branch rules can
+  name one writer instead of trusting every workflow that holds `GITHUB_TOKEN`.
+- The token covers one repository and expires after an hour.
+- The publish job's `GITHUB_TOKEN` stays read-only, so no other step in the job,
+  and no other job in the workflow, can push.
+
+Rejected: `GITHUB_TOKEN` with `contents: write` on `publish`. It is simpler, but
+it can write to every branch of the repository, and branch rules cannot tell a
+ledger publication from any other push by the workflow.
 
 ### Convergent publishing
 

@@ -202,10 +202,12 @@ Notes for whoever applies this change:
 - [x] 8.4 Add `.github/workflows/record.yml` with the three stages: `resolve`,
   `run` (`contents: read`, `persist-credentials: false`, checksum and tag-to-sha
   checks, no token in the environment of the step that executes downloaded code)
-  and `publish` (`contents: write`, no gems, `!cancelled()`, a concurrency group
-  per environment and channel), plus a check that `VERSION` equals the tag.
-  Verify the YAML parses, only `publish` has write permission, and `actionlint`
-  passes if it is installed.
+  and `publish` (`contents: read`; pushes with a greeterhq-ledger-writer App
+  token minted in the `ledger` environment; no gems, `!cancelled()`, a
+  concurrency group per environment and channel), plus a check that
+  `GreeterAcceptance::VERSION` equals the tag. Verify the YAML parses, only
+  `publish` holds a write credential (the App token), and `actionlint` passes if
+  it is installed.
 - [x] 8.5 Change `ci.yml` to ignore the `ledger-prod` and `ledger-stage` branches
   (`branches-ignore`). Verify the YAML parses and `lint` and `spec-gate` are
   unchanged.
@@ -213,6 +215,8 @@ Notes for whoever applies this change:
   calls the gate (a `uses:` snippet and its inputs), the `channel-released`
   payload, manual runs, `rerun_all` and `force`, and the ledger branches. Verify
   every YAML snippet in the README parses.
+- [ ] 8.7 publish uses the ledger environment and a minted App token; only the
+  mint step and TOKEN change
 
 ## 9. Verify and docs
 

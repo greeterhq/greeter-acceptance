@@ -1,6 +1,6 @@
 fileignoreconfig:
 - filename: .github/workflows/record.yml
-  checksum: c2d6779b54ce44352bd0cd3164d39e49aaac76beb4c8856f3af8a19696a770e3
+  checksum: 8125567f6fa30802d5570966ab113f6ac9b1850d0b1c7feb4f8e2a8ee435ff9e
 - filename: .kiro/prompts/opsx-apply.prompt.md
   checksum: dd096f50b0520f9b64cb3dfebaa7a4940a5369da8b505bb22c6166991198ce79
 - filename: .kiro/skills/openspec-apply-change/SKILL.md

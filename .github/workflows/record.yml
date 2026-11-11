@@ -174,7 +174,8 @@ jobs:
 
       - name: Check VERSION matches the suite tag
         run: |
-          [ "v$(tr -d '[:space:]' < VERSION)" = "$SUITE_TAG" ] || { echo "::error::VERSION does not match the tag $SUITE_TAG"; exit 1; }
+          version="$(ruby -Ilib -rgreeter_acceptance/version -e 'print GreeterAcceptance::VERSION')"
+          [ "v${version}" = "$SUITE_TAG" ] || { echo "::error::GreeterAcceptance::VERSION (${version}) does not match the tag $SUITE_TAG"; exit 1; }
 
       - name: Set up the suite's Ruby
         uses: ruby/setup-ruby@v1
@@ -270,8 +271,9 @@ jobs:
     # Runs after a failed suite too: a failure is a result worth recording.
     if: ${{ !cancelled() && needs.resolve.outputs.has_work == 'true' && needs.resolve.outputs.suite_tag != '' }}
     runs-on: ubuntu-24.04
+    environment: ledger
     permissions:
-      contents: write
+      contents: read
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.resolve.outputs.matrix) }}
@@ -283,6 +285,16 @@ jobs:
       SUITE_TAG: ${{ needs.resolve.outputs.suite_tag }}
 
     steps:
+      - name: Mint the ledger-writer token
+        id: ledger-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.LEDGER_APP_CLIENT_ID }}
+          private-key: ${{ secrets.LEDGER_APP_PRIVATE_KEY }}
+          owner: greeterhq
+          repositories: greeter-acceptance
+          permission-contents: write
+
       - uses: actions/checkout@v5
         with:
           ref: ${{ needs.resolve.outputs.suite_tag }}
@@ -304,7 +316,7 @@ jobs:
 
       - name: Publish to the ledger branch
         env:
-          TOKEN: ${{ github.token }}
+          TOKEN: ${{ steps.ledger-token.outputs.token }}
           REPOSITORY: ${{ github.repository }}
           BRANCH: ${{ matrix.ledger_branch }}
           ENVIRONMENT: ${{ matrix.environment }}
