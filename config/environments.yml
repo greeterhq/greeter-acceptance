@@ -19,3 +19,5 @@ environments:
       http:
         base_url: https://q2ypn34esg.execute-api.eu-west-2.amazonaws.com
         host_pattern: '\Aq2ypn34esg\.execute-api\.eu-west-2\.amazonaws\.com\z'
+      cli:
+        repo: greeterhq/greeter-cli

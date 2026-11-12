@@ -31,10 +31,12 @@ module GreeterAcceptance
       @channel = channel
       @environment = environment
       @suite_version = suite_version
-      @expected_version = expected_version
-      @expected_sha = expected_sha
-      @run_id = run_id&.to_s
-      @released_at = released_at
+      # Optional context comes from the environment, where an unset CI step output
+      # arrives as an empty string. Empty means unknown, and is recorded as null.
+      @expected_version = presence(expected_version)
+      @expected_sha = presence(expected_sha)
+      @run_id = presence(run_id)
+      @released_at = presence(released_at)
       @clock = clock
       @rows = []
       @observations = []
@@ -126,6 +128,11 @@ module GreeterAcceptance
         return match[1] if match
       end
       nil
+    end
+
+    def presence(value)
+      text = value&.to_s
+      text unless text.nil? || text.strip.empty?
     end
   end
 end
