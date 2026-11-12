@@ -1,0 +1,21 @@
+# The only source of test targets for record and gate runs. Read from the default
+# branch; a target is never taken from an event, a workflow input or a caller.
+# A change here is a reviewed change to what the suite is allowed to call.
+#
+# An http target's host must match its environment's host_pattern before any
+# request is made. Each pattern admits exactly one host.
+environments:
+  prod:
+    ledger_branch: ledger-prod
+    channels:
+      http:
+        base_url: https://dhsuw1brrc.execute-api.eu-west-2.amazonaws.com
+        host_pattern: '\Adhsuw1brrc\.execute-api\.eu-west-2\.amazonaws\.com\z'
+      cli:
+        repo: greeterhq/greeter-cli
+  stage:
+    ledger_branch: ledger-stage
+    channels:
+      http:
+        base_url: https://q2ypn34esg.execute-api.eu-west-2.amazonaws.com
+        host_pattern: '\Aq2ypn34esg\.execute-api\.eu-west-2\.amazonaws\.com\z'

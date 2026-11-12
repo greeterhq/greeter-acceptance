@@ -1,4 +1,6 @@
 fileignoreconfig:
+- filename: .github/workflows/record.yml
+  checksum: 8125567f6fa30802d5570966ab113f6ac9b1850d0b1c7feb4f8e2a8ee435ff9e
 - filename: .kiro/prompts/opsx-apply.prompt.md
   checksum: dd096f50b0520f9b64cb3dfebaa7a4940a5369da8b505bb22c6166991198ce79
 - filename: .kiro/skills/openspec-apply-change/SKILL.md
@@ -47,28 +49,62 @@ fileignoreconfig:
   checksum: c6bdd8aa10b8aa5ba3dde78a8ec8e3422c834d265433612d3ced275d12aa92db
 - filename: .kiro/skills/openspec-verify-change/SKILL.md
   checksum: d48ac81ec022b040f1ac05525894fa5067e40c7651d1fbd2a427df5aa0907b69
-- filename: README.md
-  checksum: 5e1a328d220c3d215ba9b27f1ec0c1e5835869102ea8057368fb8fa929961823
 - filename: Gemfile.lock
   checksum: 6836a3d8ef213bfaed8c8df6bcb30b1819add5d807c3bed7c31410e05d5c5f02
+- filename: bin/gate-verdict
+  checksum: 196b086c5686f3282dd3ffc30c60d85515d1eaf29bf83a99de28c703252c3a0e
+- filename: bin/publish
+  checksum: f878f4bf62f784fdb45eddbffbbbfe59c08db1037063b62be3f2b62cbae567d3
+- filename: config/environments.yml
+  checksum: 86da8558568290f47e019650896705c864f97ab3447a5570ced510dc5d38b1c8
 - filename: docs/traceability-schema.md
-  checksum: 132d8857bb312507946191f2ce2fe4b67751813baf3c25b35269a0ea8b8e6b2e
+  checksum: ddc4db1f0c5f360adb92e0ef9d970aedfc6b7e970c01bdde8e46f370bb893a1b
 - filename: features/step_definitions/greeting_steps.rb
   checksum: 6065abaccad30aceb8f261bc9532de11e312b808ba7e1321fdfd0ca3a4b28e92
 - filename: features/support/env.rb
-  checksum: d52be5486709abf58222eb6cbd0f2808431b94bf8695473c0cffed8a87d8da70
-- filename: lib/greeter_acceptance/drivers/cli_driver.rb
-  checksum: b3e40d9e2d0b91fd87812030953246194317db0ded417ada13b6f97bf385e65b
-- filename: lib/greeter_acceptance/drivers/http_driver.rb
-  checksum: f2752f87447ee67544cb71307a7f095fbbae5ec752e12a94321414cabae70848
-- filename: lib/greeter_acceptance/ports/greeter_driver.rb
-  checksum: 6baab555d1215c801e3ef9ad5ce76f9832319d086aed446edade7c687dd08f0e
-- filename: lib/greeter_acceptance/trace.rb
-  checksum: dffbcc0e6b47cee512a7611e48d9f4019792d719f5b84a428251c70c77d74be7
+  checksum: 07a9e50b475ad8a26061b065d2d546c93a01602724d3c5d6846f499f406dad6c
+- filename: lib/greeter_acceptance/environments.rb
+  checksum: 3dba7310441b08421a11529dd13ca30384f4ce612fafbbf6d7407f8cb4eaebd1
+- filename: lib/greeter_acceptance/gate_verdict.rb
+  checksum: 2f264662b69e7caaab175f54fb0ae5fc25f3993b5a34c75f8227f8cca29a862c
+- filename: lib/greeter_acceptance/publisher/validation.rb
+  checksum: 8cb01c869d94038956ceb7ca0be16453ed08712d47481aa77396dad837f79f7c  
+- filename: lib/greeter_acceptance/observed.rb
+  checksum: f74747f71ff593cf0c2afa4098aaf1eb3630654a9b8e979a851574add4d23131
+- filename: lib/greeter_acceptance/run_record.rb
+  checksum: 1214970e365c8f44cea9495dace57892b27b86deee08426b6c5591dc2b807ca5
+- filename: openspec/changes/publish-channel-ledger/specs/driver-contract/spec.md
+  checksum: a90ccfeb9e264929eff467549b5d4537f00087261610270cf92669ba62371d20
+- filename: openspec/changes/publish-channel-ledger/proposal.md
+  checksum: 29e9825a47dbdeec6ee88a52eaf468dbe5ed00944cd480a1289e18b2038341d6
+- filename: openspec/changes/publish-channel-ledger/specs/traceability/spec.md
+  checksum: c7393546b4c7ac30f42e28355992f88fa85eb750eeba80c4d342cb2cfd792247
+- filename: openspec/changes/publish-channel-ledger/design.md
+  checksum: aea5ebfe988c69cf548fb548b64ee75fffae3a9ceb55fc175490883c80449049
 - filename: openspec/specs/driver-contract/spec.md
   checksum: 1269d273b8c9e2f9d7d6e9f76808a172057adeb52fc3d174444b4d460e7963b2
 - filename: openspec/specs/traceability/spec.md
   checksum: 295dd9bae4ab4c456a8ef126a7e46ce3eadbfcb7166c6e90dbc6e24418456ba4
 - filename: openspec/specs/greeting/spec.md
   checksum: a555470128358725aa291dee644a18d385ac227b1517ea9777c88b831de05b5a
+- filename: spec/environments_spec.rb
+  checksum: 9e8c9b4e84d9e5afb46f1647d8952f1239deeb594557cebe2c209dd5f1c428e3
+- filename: spec/ledger_renderer_spec.rb
+  checksum: c0b56045f31d85666f32ce81fc8e8daca706b8308572aadcba1e9edbc0718eb9
+- filename: spec/observed_driver_spec.rb
+  checksum: dae09a1f6c4c432e0dd46f94140f78c3bc9c028e5c2673524173f7c73079733b
+- filename: spec/ledger_spec.rb
+  checksum: 6b1331152a3d40b4c7c34af03bd26f3de93a08bb698aa4abcf0d13a80d9fa94a
+- filename: spec/deployed_spec.rb
+  checksum: 2799ace108440816a53e43ea7e547a159af9bbef63755cda97fe479681e26ea9
+- filename: spec/support/ledger_fixtures.rb
+  checksum: b77d6ea84f439b390085bee93e817e5dc4344c5c07905abdb3e81dfd7c773f68
+- filename: spec/event_validation_spec.rb
+  checksum: aa690b4c0cacd5d80a88ac0a4ceaad754abe45f61f154f2d02c0841eeef97704
+- filename: spec/publisher_spec.rb
+  checksum: 59acb221ce30fc60feca28ba40a359185caa8ed8a06099f5a580294a7214d614
+- filename: spec/support/ledger_remote_context.rb
+  checksum: 95339f64d17e3cdec7cb8aecd4dcf22d69120e4e31cb4c3e2c595d2705a104ec
+- filename: spec/gate_verdict_spec.rb
+  checksum: d04ff6f88187d9bf22d8b97c183594b6eba5f990e86dd44c95952a69a6f75ac6
 version: ""

@@ -1,0 +1,352 @@
+# .github/workflows/record.yml
+#
+# Record mode: runs a released suite version against what is deployed and records
+# the result on the ledger branch for the environment. Three stages, so the stage
+# that can write is never the stage that runs code:
+#
+#   resolve ──── run (matrix) ──── publish (matrix)
+#
+#   resolve   read-only. Decides what to test and which suite tag to use.
+#   run       read-only. Runs the suite at that tag against one channel and
+#             uploads the trace as an artifact. Never has a write token.
+#   publish   the only write access. Standard-library Ruby only: no gems are
+#             installed and no code from the channel under test runs. It treats
+#             the trace as data, validates it, and pushes it to the ledger branch.
+#
+# Triggers:
+#   repository_dispatch  channel-released  a channel announces a release
+#   push of a tag v*                       a new suite version re-tests what is deployed
+#   workflow_dispatch                      a manual run; rerun_all re-tests everything
+#
+# Every value that comes from an event is passed through `env`, never written
+# into a script, and is validated by bin/resolve before it is used.
+
+name: Record
+
+"on":
+  repository_dispatch:
+    types: [channel-released]
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "Channel to test (cli or http); ignored when rerun_all is set"
+        type: string
+        default: ""
+      version:
+        description: "Channel version, e.g. v1.2.3"
+        type: string
+        default: ""
+      sha:
+        description: "Channel commit (7 to 40 lowercase hex characters)"
+        type: string
+        default: ""
+      environment:
+        description: "Environment name from config/environments.yml"
+        type: string
+        default: ""
+      artifact:
+        description: "Artifact tag for an artifact channel (optional)"
+        type: string
+        default: ""
+      rerun_all:
+        description: "Re-test every channel in every environment, as recorded in deployed.json"
+        type: boolean
+        default: false
+      force:
+        description: "Allow a version older than the one recorded (a rollback). Recorded with your name."
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  RUBY_VERSION: "3.3"
+
+jobs:
+# ═════════════════════════════════════════════════════════════════════════════
+# resolve
+# ═════════════════════════════════════════════════════════════════════════════
+  resolve:
+    name: Resolve
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.resolve.outputs.matrix }}
+      suite_tag: ${{ steps.resolve.outputs.suite_tag }}
+      has_work: ${{ steps.resolve.outputs.has_work }}
+
+    steps:
+      # Full history and tags: the latest suite tag is chosen from the tags, and
+      # the ledger branches are read for what is currently deployed.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+
+      - name: Work out what to test
+        id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+          INPUT_CHANNEL: ${{ inputs.channel }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_SHA: ${{ inputs.sha }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_ARTIFACT: ${{ inputs.artifact }}
+          INPUT_RERUN_ALL: ${{ inputs.rerun_all }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          deployed=()
+          # What is deployed now is read from the ledger branches as data.
+          for environment in prod stage; do
+            if git ls-remote --exit-code --heads "https://github.com/${REPOSITORY}.git" "ledger-${environment}" > /dev/null 2>&1; then
+              git fetch --no-tags --depth=1 origin "ledger-${environment}:refs/remotes/origin/ledger-${environment}"
+              if git cat-file -e "origin/ledger-${environment}:deployed.json" 2> /dev/null; then
+                git show "origin/ledger-${environment}:deployed.json" > "$RUNNER_TEMP/deployed-${environment}.json"
+                deployed+=(--deployed "${environment}=$RUNNER_TEMP/deployed-${environment}.json")
+              fi
+            fi
+          done
+
+          git tag --list > "$RUNNER_TEMP/tags.txt"
+          flags=()
+          case "$EVENT_NAME" in
+            repository_dispatch)
+              trigger=channel_released
+              printf '%s' "$CLIENT_PAYLOAD" > "$RUNNER_TEMP/event.json"
+              ;;
+            push)
+              trigger=suite_tag
+              ;;
+            workflow_dispatch)
+              trigger=manual
+              ruby -rjson -e 'puts JSON.generate(%w[channel version sha environment artifact].to_h { |k| [k, ENV.fetch("INPUT_#{k.upcase}")] }.reject { |_, v| v.empty? })' > "$RUNNER_TEMP/event.json"
+              if [ "$INPUT_RERUN_ALL" = "true" ]; then flags+=(--rerun-all); fi
+              ;;
+            *)
+              echo "::error::unsupported event"; exit 1
+              ;;
+          esac
+          if [ -f "$RUNNER_TEMP/event.json" ]; then flags+=(--payload "$RUNNER_TEMP/event.json"); fi
+
+          ruby bin/resolve --trigger "$trigger" --tags "$RUNNER_TEMP/tags.txt" "${deployed[@]}" "${flags[@]}" > "$RUNNER_TEMP/resolved.json"
+
+          {
+            echo "matrix=$(ruby -rjson -e 'puts JSON.generate(JSON.parse(File.read(ARGV[0]))["matrix"])' "$RUNNER_TEMP/resolved.json")"
+            echo "suite_tag=$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["suite_tag"]' "$RUNNER_TEMP/resolved.json")"
+            echo "has_work=$(ruby -rjson -e 'puts !JSON.parse(File.read(ARGV[0]))["matrix"]["include"].empty?' "$RUNNER_TEMP/resolved.json")"
+          } >> "$GITHUB_OUTPUT"
+
+# ═════════════════════════════════════════════════════════════════════════════
+# run  (read-only: runs the suite, holds no write token)
+# ═════════════════════════════════════════════════════════════════════════════
+  run:
+    name: Run (${{ matrix.environment }} / ${{ matrix.channel }})
+    needs: resolve
+    if: needs.resolve.outputs.has_work == 'true' && needs.resolve.outputs.suite_tag != ''
+    # The artifact channel's Gemfile may declare a Ruby that newer runner images
+    # cannot install, so the run uses the older image.
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.resolve.outputs.matrix) }}
+    env:
+      SUITE_TAG: ${{ needs.resolve.outputs.suite_tag }}
+
+    steps:
+      # The suite, at a released version that contains the record-mode code.
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.resolve.outputs.suite_tag }}
+          persist-credentials: false
+
+      - name: Check VERSION matches the suite tag
+        run: |
+          version="$(ruby -Ilib -rgreeter_acceptance/version -e 'print GreeterAcceptance::VERSION')"
+          [ "v${version}" = "$SUITE_TAG" ] || { echo "::error::GreeterAcceptance::VERSION (${version}) does not match the tag $SUITE_TAG"; exit 1; }
+
+      - name: Set up the suite's Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
+
+      # ── artifact channel ────────────────────────────────────────────────────
+      - name: Fetch the release (checksum and tag checked)
+        if: matrix.channel == 'cli'
+        id: fetch
+        env:
+          REPO: ${{ matrix.repo }}
+          VERSION: ${{ matrix.version }}
+          SHA: ${{ matrix.sha }}
+        run: echo "dir=$(ruby bin/cli-release fetch --repo "$REPO" --version "$VERSION" --sha "$SHA" --out tmp/cli)" >> "$GITHUB_OUTPUT"
+
+      - name: Read the Ruby the release declares
+        if: matrix.channel == 'cli'
+        id: declared
+        env:
+          CLI_DIR: ${{ steps.fetch.outputs.dir }}
+        run: |
+          declared="$(ruby bin/cli-release ruby-version "$CLI_DIR")"
+          echo "ruby=${declared:-3.3}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up the Ruby the release declares
+        if: matrix.channel == 'cli'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ steps.declared.outputs.ruby }}
+
+      - name: Install the release and write its launcher
+        if: matrix.channel == 'cli'
+        id: launcher
+        env:
+          CLI_DIR: ${{ steps.fetch.outputs.dir }}
+        run: echo "path=$(ruby bin/cli-release install "$CLI_DIR" --launcher "$RUNNER_TEMP/greeter-launch")" >> "$GITHUB_OUTPUT"
+
+      - name: Go back to the suite's Ruby
+        if: matrix.channel == 'cli'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
+
+      # The only step that sees a token: it reads the release's publish time from
+      # the GitHub API and runs no downloaded code.
+      - name: Look up when the release was published
+        if: matrix.channel == 'cli'
+        id: released
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ matrix.repo }}
+          VERSION: ${{ matrix.version }}
+        run: echo "at=$(gh api "repos/${REPO}/releases/tags/${VERSION}" --jq .published_at)" >> "$GITHUB_OUTPUT"
+
+      # ── run ─────────────────────────────────────────────────────────────────
+      - name: Run the suite
+        id: suite
+        continue-on-error: true
+        env:
+          GREETER_CHANNEL: ${{ matrix.channel }}
+          GREETER_ENVIRONMENT: ${{ matrix.environment }}
+          GREETER_EXPECTED_VERSION: ${{ matrix.version }}
+          GREETER_EXPECTED_SHA: ${{ matrix.sha }}
+          GREETER_BASE_URL: ${{ matrix.base_url }}
+          GREETER_CLI_CMD: ${{ steps.launcher.outputs.path }}
+          GREETER_RELEASED_AT: ${{ steps.released.outputs.at }}
+          GREETER_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: bundle exec cucumber --format progress
+
+      - name: Keep the trace for the publish stage
+        uses: actions/upload-artifact@v7
+        with:
+          name: result-${{ matrix.environment }}-${{ matrix.channel }}
+          path: tmp/traceability.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # A failing suite is recorded, and also fails this job.
+      - name: Fail the job if the suite failed
+        if: steps.suite.outcome == 'failure'
+        run: exit 1
+
+# ═════════════════════════════════════════════════════════════════════════════
+# publish  (the only stage with write access)
+# ═════════════════════════════════════════════════════════════════════════════
+  publish:
+    name: Publish (${{ matrix.environment }} / ${{ matrix.channel }})
+    needs: [resolve, run]
+    # Runs after a failed suite too: a failure is a result worth recording.
+    if: ${{ !cancelled() && needs.resolve.outputs.has_work == 'true' && needs.resolve.outputs.suite_tag != '' }}
+    runs-on: ubuntu-24.04
+    environment: ledger
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.resolve.outputs.matrix) }}
+    # One publisher at a time per ledger branch and channel; a queued run waits.
+    concurrency:
+      group: ledger-${{ matrix.environment }}-${{ matrix.channel }}
+      cancel-in-progress: false
+    env:
+      SUITE_TAG: ${{ needs.resolve.outputs.suite_tag }}
+
+    steps:
+      - name: Mint the ledger-writer token
+        id: ledger-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.LEDGER_APP_CLIENT_ID }}
+          private-key: ${{ secrets.LEDGER_APP_PRIVATE_KEY }}
+          owner: greeterhq
+          repositories: greeter-acceptance
+          permission-contents: write
+
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.resolve.outputs.suite_tag }}
+          persist-credentials: false
+
+      # Standard-library Ruby only: no bundler, no gems.
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+
+      # The trace is data. It may be missing when the run never reached the suite.
+      - name: Download the trace
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: result-${{ matrix.environment }}-${{ matrix.channel }}
+          path: tmp/result
+
+      - name: Publish to the ledger branch
+        env:
+          TOKEN: ${{ steps.ledger-token.outputs.token }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ matrix.ledger_branch }}
+          ENVIRONMENT: ${{ matrix.environment }}
+          CHANNEL: ${{ matrix.channel }}
+          VERSION: ${{ matrix.version }}
+          SHA: ${{ matrix.sha }}
+          ARTIFACT: ${{ matrix.artifact }}
+          RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+          FORCE: ${{ inputs.force }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          # The token is handed to git as a header for this one process, and masked.
+          echo "::add-mask::$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.https://github.com/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+
+          flags=()
+          if [ -s tmp/result/traceability.json ]; then
+            flags+=(--result tmp/result/traceability.json)
+          else
+            echo "::warning::the run produced no result; only the deployment is recorded"
+            flags+=(--no-result)
+          fi
+          if [ -n "$ARTIFACT" ]; then flags+=(--artifact "$ARTIFACT"); fi
+          if [ "$FORCE" = "true" ]; then flags+=(--force --actor "$ACTOR"); fi
+
+          ruby bin/publish \
+            --remote "https://github.com/${REPOSITORY}.git" --branch "$BRANCH" \
+            --environment "$ENVIRONMENT" --suite-version "$SUITE_TAG" \
+            --channel "$CHANNEL" --version "$VERSION" --sha "$SHA" --run-id "$RUN_ID" \
+            "${flags[@]}"

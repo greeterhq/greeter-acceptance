@@ -1,0 +1,160 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Gets a greeter-cli release ready to be run by the suite. Standard library only
+# (plus curl, tar and bundle). The release is a Ruby project that must run under
+# the Ruby its own Gemfile declares, through its own bundle, whatever Ruby the
+# suite uses, so this does not install anything into the suite's environment.
+#
+#   bin/cli-release fetch --repo OWNER/NAME --version v0.1.2 --sha abc1234 --out DIR
+#       Downloads the release tarball and its .sha256, checks the checksum, checks
+#       that the tag points at the commit the event named, and unpacks it. Prints
+#       the directory it unpacked.
+#   bin/cli-release extract --tarball FILE --out DIR
+#       Unpacks a tarball the caller built (the gate). Prints the directory.
+#   bin/cli-release ruby-version DIR
+#       Prints the Ruby version DIR/Gemfile declares, or nothing.
+#   bin/cli-release install DIR --launcher FILE
+#       Runs `bundle install` in DIR with the Ruby on PATH now, and writes an
+#       executable launcher that runs the CLI with that Ruby. Use it after setting
+#       up the Ruby that ruby-version printed.
+#
+# The repository, version and commit are validated against strict patterns; the
+# tarball is checked for paths that would escape the output directory.
+
+require 'digest'
+require 'fileutils'
+require 'open3'
+require 'optparse'
+require 'rbconfig'
+
+# The release handling behind the subcommands above, kept as a module so each
+# guard can be exercised directly.
+module CliRelease
+  class Failure < StandardError; end
+
+  # Each part starts with a letter or digit, so neither can be "." or "..".
+  REPO = %r{\A[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*\z}
+  VERSION = /\Av\d+\.\d+\.\d+\z/
+  SHA = /\A[0-9a-f]{7,40}\z/
+  CLEAN_ENV = { 'BUNDLE_GEMFILE' => nil, 'BUNDLE_PATH' => nil, 'BUNDLE_BIN' => nil, 'RUBYOPT' => nil }.freeze
+
+  module_function
+
+  def fetch(repo:, version:, sha:, out:)
+    check('repo', repo, REPO)
+    check('version', version, VERSION)
+    check('sha', sha, SHA)
+    FileUtils.mkdir_p(out)
+    tarball = File.join(out, "greeter-cli-#{version}.tar.gz")
+    base = "https://github.com/#{repo}/releases/download/#{version}/greeter-cli-#{version}.tar.gz"
+    download(base, tarball)
+    download("#{base}.sha256", "#{tarball}.sha256")
+    verify_checksum(tarball)
+    verify_tag(repo, version, sha)
+    extract(tarball: tarball, out: out)
+  end
+
+  def extract(tarball:, out:)
+    entries = run('tar', '-tzf', tarball).split("\n")
+    top = single_top_level(entries)
+    FileUtils.mkdir_p(out)
+    run('tar', '-xzf', tarball, '-C', out)
+    File.expand_path(File.join(out, top))
+  end
+
+  # Refuses a path that would land outside the output directory, and a tarball
+  # that does not unpack into exactly one directory.
+  def single_top_level(entries)
+    escaping = entries.find { |entry| entry.start_with?('/') || entry.split('/').include?('..') }
+    raise Failure, "the tarball has a path that escapes the output directory: #{escaping}" if escaping
+
+    top = entries.map { |entry| entry.split('/').first }.uniq
+    raise Failure, "expected one top-level directory, found: #{top.join(', ')}" unless top.length == 1
+
+    top.first
+  end
+
+  def ruby_version(dir)
+    gemfile = File.join(dir, 'Gemfile')
+    File.read(gemfile)[/^\s*ruby\s+['"]([^'"]+)['"]/, 1]
+  end
+
+  def install(dir:, launcher:)
+    _output, status = Open3.capture2e(CLEAN_ENV, 'bundle', 'install', chdir: dir)
+    raise Failure, "bundle install failed in #{dir}" unless status.success?
+
+    File.write(launcher, launcher_script(File.expand_path(dir)))
+    File.chmod(0o755, launcher)
+    File.expand_path(launcher)
+  end
+
+  # Runs the CLI with the Ruby that installed its bundle, however the suite's own
+  # Ruby is set up.
+  def launcher_script(dir)
+    gem_env = %w[GEM_HOME GEM_PATH].filter_map { |name| ENV.fetch(name, nil) && "export #{name}='#{ENV.fetch(name)}'" }
+    <<~SH
+      #!/bin/sh
+      cd '#{dir}' || exit 127
+      unset BUNDLE_GEMFILE BUNDLE_PATH BUNDLE_BIN RUBYOPT GEM_HOME GEM_PATH
+      #{gem_env.join("\n")}
+      export PATH='#{RbConfig::CONFIG['bindir']}':"$PATH"
+      exec bundle exec ruby exe/greeter "$@"
+    SH
+  end
+
+  def verify_checksum(tarball)
+    expected = File.read("#{tarball}.sha256")[/\A\h{64}/]
+    raise Failure, "#{tarball}.sha256 does not hold a SHA-256" if expected.nil?
+    return if Digest::SHA256.file(tarball).hexdigest == expected
+
+    raise Failure, 'the tarball does not match its published checksum'
+  end
+
+  # The tag must point at the commit the event named. An annotated tag is peeled.
+  def verify_tag(repo, version, sha)
+    lines = run('git', 'ls-remote', '--tags', "https://github.com/#{repo}.git",
+                "refs/tags/#{version}", "refs/tags/#{version}^{}").split("\n")
+    commit = (lines.find { |line| line.end_with?('^{}') } || lines.first).to_s.split.first
+    return if commit&.start_with?(sha)
+
+    raise Failure, "tag #{version} points at #{commit.inspect}, not at #{sha}"
+  end
+
+  def download(url, path)
+    run('curl', '-fsSL', '-o', path, url)
+  end
+
+  def check(name, value, pattern)
+    raise Failure, "#{name} #{value.inspect} is not valid" unless value.is_a?(String) && pattern.match?(value)
+  end
+
+  def run(*command)
+    output, status = Open3.capture2e(*command)
+    raise Failure, "#{command.first} failed: #{output.strip}" unless status.success?
+
+    output
+  end
+end
+
+if $PROGRAM_NAME == __FILE__
+  command = ARGV.shift
+  options = {}
+  OptionParser.new do |parser|
+    %w[repo version sha out tarball launcher].each do |name|
+      parser.on("--#{name} VALUE") { |value| options[name.to_sym] = value }
+    end
+  end.parse!
+
+  begin
+    case command
+    when 'fetch' then puts CliRelease.fetch(**options.slice(:repo, :version, :sha, :out))
+    when 'extract' then puts CliRelease.extract(**options.slice(:tarball, :out))
+    when 'ruby-version' then puts CliRelease.ruby_version(ARGV.fetch(0))
+    when 'install' then puts CliRelease.install(dir: ARGV.fetch(0), launcher: options.fetch(:launcher))
+    else abort 'bin/cli-release: expected fetch, extract, ruby-version or install'
+    end
+  rescue CliRelease::Failure, IndexError, SystemCallError => e
+    abort "bin/cli-release: #{e.message}"
+  end
+end

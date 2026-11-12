@@ -12,6 +12,14 @@ RSpec.describe 'CliDriver' do
 
   it_behaves_like 'a GreeterDriver'
 
+  describe 'when the greeter command cannot be run' do
+    let(:unreachable_driver) do
+      GreeterAcceptance::Drivers::CliDriver.new(command: '/nonexistent/greeter')
+    end
+
+    it_behaves_like 'a driver whose channel is unreachable'
+  end
+
   it 'declares no capabilities' do
     expect(driver.capabilities).to eq(Set.new)
   end

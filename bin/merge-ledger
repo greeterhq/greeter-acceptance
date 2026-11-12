@@ -1,21 +1,68 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Merges per-channel traceability.json files into the cross-channel ledger.
+# Builds ledger.json (greeterhq.ledger.v2) and LEDGER.md locally from a directory
+# of per-channel results (greeterhq.traceability.v2). Standard library only. The
+# publisher builds the same files on a ledger branch; this is the same code for
+# trying it out without git.
 #
 # Usage:
-#   bin/merge-ledger tmp/traceability-cli.json tmp/traceability-http.json
-#   bin/merge-ledger            # defaults to the two files below if present
+#   bin/merge-ledger --channels DIR [--deployed FILE] [--features DIR]
+#                    [--environment NAME] [--suite-version VERSION] [--out DIR]
+#
+#   --channels DIR       a directory of channel results, one file per channel
+#   --deployed FILE      a greeterhq.deployed.v1 document (default: empty)
+#   --features DIR       where the @requirement-* tags are read (default: features)
+#   --environment NAME   default: local
+#   --suite-version V    default: v<GreeterAcceptance::VERSION>
+#   --out DIR            default: tmp/ledger
+
+require 'fileutils'
+require 'json'
+require 'optparse'
 
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+require 'greeter_acceptance/composition_root'
+require 'greeter_acceptance/deployed'
 require 'greeter_acceptance/ledger'
+require 'greeter_acceptance/ledger_renderer'
+require 'greeter_acceptance/version'
 
-paths = ARGV.empty? ? Dir.glob('tmp/traceability-*.json') : ARGV
+options = {
+  features: 'features', environment: 'local', out: 'tmp/ledger',
+  suite_version: "v#{GreeterAcceptance::VERSION}"
+}
+OptionParser.new do |parser|
+  parser.on('--channels DIR') { |value| options[:channels] = value }
+  parser.on('--deployed FILE') { |value| options[:deployed] = value }
+  parser.on('--features DIR') { |value| options[:features] = value }
+  parser.on('--environment NAME') { |value| options[:environment] = value }
+  parser.on('--suite-version VERSION') { |value| options[:suite_version] = value }
+  parser.on('--out DIR') { |value| options[:out] = value }
+end.parse!
 
-if paths.empty?
-  warn 'No traceability files given and none found at tmp/traceability-*.json'
-  exit 1
+abort 'bin/merge-ledger: --channels is required' unless options[:channels]
+
+results = Dir.glob(File.join(options[:channels], '*.json')).to_h do |file|
+  document = JSON.parse(File.read(file))
+  [document.dig('run', 'channel'), document]
 end
+abort "bin/merge-ledger: no channel results found in #{options[:channels]}" if results.empty?
 
-output = GreeterAcceptance::Ledger.from_files(paths).write
-puts "Wrote #{output} from #{paths.join(', ')}"
+deployed = if options[:deployed]
+             JSON.parse(File.read(options[:deployed]))
+           else
+             GreeterAcceptance::Deployed.empty(environment: options[:environment])
+           end
+
+ledger = GreeterAcceptance::Ledger.build(
+  environment: options[:environment], suite_version: options[:suite_version],
+  channels: GreeterAcceptance::CompositionRoot.channels,
+  requirements: GreeterAcceptance::Ledger.requirements_from_features(options[:features]),
+  results: results, deployed: deployed
+)
+
+FileUtils.mkdir_p(options[:out])
+File.write(File.join(options[:out], 'ledger.json'), "#{JSON.pretty_generate(ledger)}\n")
+File.write(File.join(options[:out], 'LEDGER.md'), GreeterAcceptance::LedgerRenderer.render(ledger))
+puts "Wrote #{options[:out]}/ledger.json and #{options[:out]}/LEDGER.md from #{results.keys.join(', ')}"

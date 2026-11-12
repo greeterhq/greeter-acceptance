@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Reads the trace a gate run wrote and decides whether the gate passes. Exits 0
+# when it does and 1 when it does not, printing why.
+#
+# Usage:
+#   bin/gate-verdict --acceptance-ref v0.2.0 --expected-version v1.2.3 \
+#                    [--trace tmp/traceability.json] [--allow-unverified]
+
+require 'json'
+require 'optparse'
+
+$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+require 'greeter_acceptance/gate_verdict'
+
+options = { trace: 'tmp/traceability.json', allow_unverified: false }
+OptionParser.new do |parser|
+  parser.on('--trace FILE') { |value| options[:trace] = value }
+  parser.on('--acceptance-ref REF') { |value| options[:acceptance_ref] = value }
+  parser.on('--expected-version VERSION') { |value| options[:expected_version] = value }
+  parser.on('--allow-unverified') { options[:allow_unverified] = true }
+end.parse!
+
+begin
+  trace = JSON.parse(File.read(options[:trace]))
+rescue Errno::ENOENT, JSON::ParserError => e
+  abort "bin/gate-verdict: cannot read the trace #{options[:trace]}: #{e.message}"
+end
+
+verdict = GreeterAcceptance::GateVerdict.evaluate(
+  trace, acceptance_ref: options[:acceptance_ref], expected_version: options[:expected_version],
+         allow_unverified: options[:allow_unverified]
+)
+
+if verdict.passed?
+  puts verdict.unverified? ? 'gate passed (unverified: the channel version could not be observed)' : 'gate passed'
+else
+  warn 'gate failed:'
+  verdict.reasons.each { |reason| warn "  - #{reason}" }
+  exit 1
+end

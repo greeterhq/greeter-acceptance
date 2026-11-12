@@ -17,8 +17,9 @@ their own scenario, tagged `@capability-<name>`. A channel that lacks a required
 capability records the scenario as **not applicable** — never failed or skipped.
 
 Every run writes a per-channel `tmp/traceability.json` (schema
-`greeterhq.traceability.v1`); merging the per-channel files produces
-`tmp/ledger.json`, the requirement-by-channel matrix that is the suite's headline
+`greeterhq.traceability.v2`), recording what was tested and whether the channel's
+own reported version could be verified; merging the per-channel files produces
+a ledger, the requirement-by-channel matrix that is the suite's headline
 artifact:
 
 ```
@@ -43,18 +44,27 @@ features/
   greeting.feature            behaviour, written once, channel-neutral
   step_definitions/           call ONLY the GreeterDriver port
   support/
-    env.rb                    the ONLY composition root; picks the driver
-                              from GREETER_CHANNEL (cli|http)
+    env.rb                    the Cucumber World: exposes the driver, built by
+                              the composition root
     hooks.rb                  capability gating + tag-validation + trace writing
 lib/greeter_acceptance/
+  composition_root.rb         the ONLY place a driver is constructed; picks it
+                              from GREETER_CHANNEL (cli|http). env.rb and bin/*
+                              only call it
   ports/greeter_driver.rb     the ONLY interface steps may call
   drivers/cli_driver.rb       spawns `greeter <name>`; no counting/idempotency
   drivers/http_driver.rb      POST /greetings; capabilities: counting, idempotency
   capabilities.rb             the known capability set (single source of truth)
-  trace.rb                    writes greeterhq.traceability.v1 per run
-  ledger.rb                   merges per-channel traces into the ledger
+  observed.rb                 decorator that remembers infrastructure errors and
+                              build information across a scenario
+  run_record.rb               the run's rows and context; writes
+                              greeterhq.traceability.v2
+  version.rb                  the suite version (matches the git tag)
+  deployed.rb                 the deployed record (greeterhq.deployed.v1)
+  ledger.rb                   derives the ledger (greeterhq.ledger.v2)
+  ledger_renderer.rb          renders the ledger as LEDGER.md
 spec/drivers/                 the driver-contract every adapter must pass
-bin/merge-ledger              derives tmp/ledger.json from the per-channel traces
+bin/merge-ledger              builds ledger.json and LEDGER.md from channel results
 ```
 
 - Step definitions never mention exit codes, HTTP statuses, headers, or JSON —
@@ -97,12 +107,15 @@ GREETER_CHANNEL=http \
   bundle exec cucumber
 ```
 
-Each run writes `tmp/traceability.json` plus a channel-tagged copy
-(`tmp/traceability-<channel>.json`). Run both channels, then merge:
+Each run writes `tmp/traceability.json`. Keep each run's file under its channel's
+name, run both channels, then merge:
 
 ```bash
-bin/merge-ledger tmp/traceability-cli.json tmp/traceability-http.json
-# writes tmp/ledger.json
+mkdir -p tmp/channels
+cp tmp/traceability.json tmp/channels/cli.json    # after the cli run
+cp tmp/traceability.json tmp/channels/http.json   # after the http run
+bin/merge-ledger --channels tmp/channels
+# writes tmp/ledger/ledger.json and tmp/ledger/LEDGER.md
 ```
 
 Other tests and lint:
@@ -114,7 +127,7 @@ bundle exec rubocop              # lint
 
 ### Configuration
 
-The composition root (`features/support/env.rb`) reads:
+The composition root (`lib/greeter_acceptance/composition_root.rb`) reads:
 
 | Variable | Meaning | Default |
 | --- | --- | --- |
@@ -122,9 +135,90 @@ The composition root (`features/support/env.rb`) reads:
 | `GREETER_CLI_CMD` | the greeter CLI command (cli channel) | `greeter` |
 | `GREETER_CLI_DIR` | working directory for the CLI (cli channel) | (none) |
 | `GREETER_BASE_URL` | the greeter-http base URL (http channel) | (required for http) |
-| `ACCEPTANCE_REF` | recorded in the trace's `run.acceptance_ref` | `null` |
+| `GREETER_ENVIRONMENT` | recorded as the trace's `run.environment` | `local` |
+| `GREETER_EXPECTED_VERSION` | the channel version the run is verified against | (none) |
+| `GREETER_EXPECTED_SHA` | recorded as the trace's `run.channel_sha` | (none) |
+| `GITHUB_RUN_ID` or `GREETER_RUN_ID` | recorded as the trace's `run.run_id` | (none) |
+| `GREETER_RELEASED_AT` | recorded as the trace's `run.released_at` | (none) |
 
 An unset or unknown `GREETER_CHANNEL` fails fast with a clear message.
+
+## Gate and record
+
+Two workflows use the suite in CI. Both run a released suite version (a git tag),
+never the default branch. Record mode needs a tag that contains its code, so
+v0.2.0 or later.
+
+### Gate: before a release
+
+A channel repo calls `gate.yml` to prove a candidate passes before it publishes
+or promotes it. The gate is read-only and writes nothing to a ledger.
+
+```yaml
+jobs:
+  build:
+    # builds the tarball and uploads it as an artifact
+  gate:
+    needs: build
+    uses: greeterhq/greeter-acceptance/.github/workflows/gate.yml@v1
+    with:
+      acceptance_ref: v0.2.0   # the suite version this repo pins
+      channel: cli
+      candidate_version: v0.1.3
+      candidate_sha: ${{ github.sha }}
+      artifact_name: dist
+      artifact_file: greeter-cli-v0.1.3.tar.gz
+  release:
+    needs: gate                # does not run if the gate fails
+```
+
+| Input | Meaning |
+| --- | --- |
+| `acceptance_ref` | the released suite version to run (required) |
+| `channel` | `cli` or `http` (required) |
+| `candidate_version` | the candidate's version, e.g. `v1.2.3` (required) |
+| `candidate_sha` | the candidate's commit (required) |
+| `environment` | service channel: the environment the candidate is deployed to (default `stage`) |
+| `artifact_name`, `artifact_file` | artifact channel: the uploaded artifact and the tarball inside it |
+| `allow_unverified` | accept a channel that reports no version; the result is marked unverified |
+
+A service channel is tested where it is deployed. The target comes from
+`config/environments.yml`, never from an input.
+
+### Record: after a release
+
+`record.yml` runs the suite against what is deployed and records the result on a
+ledger branch: `ledger-prod` or `ledger-stage`, one per environment. Each branch
+holds `deployed.json`, `ledger.json`, `LEDGER.md` and one file per channel.
+Generated data only: CI ignores these branches.
+
+A channel announces a release with a `repository_dispatch` event of type
+`channel-released`:
+
+```yaml
+- name: Announce the release
+  run: >
+    gh api repos/greeterhq/greeter-acceptance/dispatches
+    -f event_type=channel-released
+    -F 'client_payload[channel]=http'
+    -F 'client_payload[version]=v1.2.3'
+    -F 'client_payload[sha]=def4567'
+    -F 'client_payload[environment]=prod'
+```
+
+The payload carries `channel`, `version`, `sha` and `environment`, and for an
+artifact channel an `artifact` tag. It is validated before use, and the target is
+looked up in `config/environments.yml`.
+
+Other triggers:
+
+- Pushing a suite tag `v*` re-tests everything currently in `deployed.json`.
+- A manual run (Actions, Record, Run workflow) tests one channel from the inputs.
+  `rerun_all` re-tests every channel in every environment instead.
+- `force` lets a manual run record a version older than the one recorded, for a
+  rollback. The ledger records who forced it.
+
+Without `force`, an older version than the recorded one is refused.
 
 ## Adding a channel
 
@@ -132,12 +226,27 @@ A new channel (web, mobile, event, …) joins the suite without touching a singl
 feature file:
 
 1. Add a driver under `lib/greeter_acceptance/drivers/` that includes
-   `GreeterAcceptance::Ports::GreeterDriver` and declares its `capabilities`.
-2. Wire it into `features/support/env.rb` behind a new `GREETER_CHANNEL` value.
+   `GreeterAcceptance::Ports::GreeterDriver`, declares its `capabilities`, and
+   implements `build_info` (see below).
+2. Wire it into `lib/greeter_acceptance/composition_root.rb` behind a new
+   `GREETER_CHANNEL` value, and add the channel to `CompositionRoot.channels`.
 3. Make it pass `spec/drivers/greeter_driver_contract.rb`.
 
 The existing features run against it immediately; capability-gated scenarios it
 cannot honour record `not_applicable` in its trace, never a failure.
+
+### What a driver reports
+
+- **Build information.** `build_info` returns a `BuildInfo` with the channel
+  version and the core version the channel reports about itself, or `nil` when
+  the channel does not report them. Asking for it must not change the channel's
+  state (no greeting, no count). A run is attributed to the version the driver
+  observed, so a channel that reports nothing is recorded as `unobserved`.
+- **Infrastructure errors.** A driver never raises because of its channel. When
+  the channel cannot be reached, or returns something the driver does not
+  recognise, `greet` returns the `:infrastructure_error` outcome and sets
+  `last_error` to `:infrastructure_error`. The scenario that hit it is recorded
+  as `error`, not `failed`.
 
 ## Versioning
 

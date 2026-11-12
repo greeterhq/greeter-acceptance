@@ -1,14 +1,41 @@
 # frozen_string_literal: true
 
 require_relative '../../lib/greeter_acceptance/capabilities'
-require_relative '../../lib/greeter_acceptance/trace'
+require_relative '../../lib/greeter_acceptance/composition_root'
+require_relative '../../lib/greeter_acceptance/run_record'
+require_relative '../../lib/greeter_acceptance/version'
 
-# Suite-wide trace for the channel under test. One per run.
-def greeter_trace
-  $greeter_trace ||= GreeterAcceptance::Trace.new(channel: driver.channel) # rubocop:disable Style/GlobalVars
+TRACE_PATH = 'tmp/traceability.json'
+
+# The record of this run. One per process: each scenario gets a World (and a
+# driver) of its own, so anything the run learns has to be kept out here.
+module GreeterAcceptance
+  class << self
+    attr_accessor :run_record
+  end
 end
 
-# 5.1 Capability gating + 5.2 tag-validation safety rail.
+# Start the run record before any scenario: read what the run is about from the
+# environment, and probe the channel once for the version it reports. A missing
+# or unknown GREETER_CHANNEL stops the run here with a clear message.
+BeforeAll do
+  env = ENV
+  probe = GreeterAcceptance::CompositionRoot.build_driver(env: env)
+
+  record = GreeterAcceptance::RunRecord.new(
+    channel: probe.channel,
+    environment: env.fetch('GREETER_ENVIRONMENT', 'local'),
+    suite_version: "v#{GreeterAcceptance::VERSION}",
+    expected_version: env.fetch('GREETER_EXPECTED_VERSION', nil),
+    expected_sha: env.fetch('GREETER_EXPECTED_SHA', nil),
+    run_id: env.fetch('GITHUB_RUN_ID') { env.fetch('GREETER_RUN_ID', nil) },
+    released_at: env.fetch('GREETER_RELEASED_AT', nil)
+  )
+  record.observe(probe.build_info)
+  GreeterAcceptance.run_record = record
+end
+
+# Capability gating + the tag-validation safety rail.
 #
 # Before each scenario, first validate its @capability-* tags against the known
 # capability set: an unknown tag (e.g. a typo @capability-countng) raises and
@@ -32,20 +59,27 @@ Before do |scenario|
   missing = required.reject { |cap| driver.supports?(cap) }
   next if missing.empty?
 
-  greeter_trace.record(
+  GreeterAcceptance.run_record.row(
     tag_names: tag_names, status: :not_applicable, missing_capabilities: missing
   )
   skip_this_scenario
 end
 
-# Record the pass/fail outcome of a scenario that actually ran.
+# Record the outcome of a scenario that actually ran. An infrastructure error the
+# driver reported wins over a failed assertion, so a channel outage is `error`,
+# not `failed`. The version the channel reported during the scenario is observed
+# too, so a version that changes mid-run is caught.
 After do |scenario|
   next if scenario.status == :skipped # already recorded as not_applicable
 
-  status = scenario.failed? ? :failed : :passed
-  greeter_trace.record(tag_names: scenario.tags.map(&:name), status: status)
+  record = GreeterAcceptance.run_record
+  record.observe(driver.build_info)
+  status = GreeterAcceptance::RunRecord.status_for(
+    failed: scenario.failed?, infrastructure_error: driver.infrastructure_error?
+  )
+  record.row(tag_names: scenario.tags.map(&:name), status: status)
 end
 
-at_exit do
-  $greeter_trace&.write # rubocop:disable Style/GlobalVars
+AfterAll do
+  GreeterAcceptance.run_record&.write(TRACE_PATH)
 end

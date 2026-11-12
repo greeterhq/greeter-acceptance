@@ -2,10 +2,19 @@
 
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 
-require 'greeter_acceptance/drivers/cli_driver'
-require 'greeter_acceptance/drivers/http_driver'
+# Load everything under lib/ so that adding a library file never needs an edit
+# to this helper. Files are required relative to one another where they depend
+# on each other, so the sorted order is safe.
+Dir[File.expand_path('../lib/**/*.rb', __dir__)].each { |file| require file }
+
+# Test-only helpers. These deliberately do not depend on lib/, so a missing
+# class in lib/ fails the example that uses it rather than the fixture.
+Dir[File.expand_path('support/**/*.rb', __dir__)].each { |file| require file }
 
 RSpec.configure do |config|
+  config.include LedgerFixtures
+  config.include GitHelpers
+
   config.expect_with :rspec do |expectations|
     expectations.include_chain_clauses_in_custom_matcher_descriptions = true
   end
