@@ -6,10 +6,16 @@
   },
   "channels": {
     "cli": {
-      "state": "missing",
+      "state": "current",
       "reasons": [
 
-      ]
+      ],
+      "channel_version": "v0.1.2",
+      "core_version": "0.1.3",
+      "suite_version": "v0.2.1",
+      "verification": "verified",
+      "recorded_at": "2026-11-12T03:00:05Z",
+      "run_id": "43145090840"
     },
     "http": {
       "state": "current",
@@ -26,23 +32,23 @@
   },
   "requirements": {
     "greeting-count": {
-      "cli": "missing",
+      "cli": "not_applicable",
       "http": "passed"
     },
     "greeting-happy": {
-      "cli": "missing",
+      "cli": "passed",
       "http": "passed"
     },
     "greeting-idempotent": {
-      "cli": "missing",
+      "cli": "not_applicable",
       "http": "passed"
     },
     "greeting-invalid": {
-      "cli": "missing",
+      "cli": "passed",
       "http": "passed"
     },
     "greeting-returning": {
-      "cli": "missing",
+      "cli": "not_applicable",
       "http": "passed"
     }
   }
