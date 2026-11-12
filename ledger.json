@@ -1,0 +1,49 @@
+{
+  "schema": "greeterhq.ledger.v2",
+  "environment": "stage",
+  "suite": {
+    "version": "v0.2.1"
+  },
+  "channels": {
+    "cli": {
+      "state": "missing",
+      "reasons": [
+
+      ]
+    },
+    "http": {
+      "state": "current",
+      "reasons": [
+
+      ],
+      "channel_version": "v0.5.19",
+      "core_version": null,
+      "suite_version": "v0.2.1",
+      "verification": "unobserved",
+      "recorded_at": "2026-11-12T02:59:35Z",
+      "run_id": "43145094814"
+    }
+  },
+  "requirements": {
+    "greeting-count": {
+      "cli": "missing",
+      "http": "passed"
+    },
+    "greeting-happy": {
+      "cli": "missing",
+      "http": "passed"
+    },
+    "greeting-idempotent": {
+      "cli": "missing",
+      "http": "passed"
+    },
+    "greeting-invalid": {
+      "cli": "missing",
+      "http": "passed"
+    },
+    "greeting-returning": {
+      "cli": "missing",
+      "http": "passed"
+    }
+  }
+}

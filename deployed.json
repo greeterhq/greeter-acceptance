@@ -1,0 +1,11 @@
+{
+  "schema": "greeterhq.deployed.v1",
+  "environment": "stage",
+  "channels": {
+    "http": {
+      "version": "v0.5.19",
+      "sha": "2b888c75104179827d5b386fe242bd9599ebfe30",
+      "run_id": "43145094814-1"
+    }
+  }
+}
