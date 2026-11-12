@@ -22,12 +22,12 @@
       "reasons": [
 
       ],
-      "channel_version": "v0.5.19",
-      "core_version": null,
+      "channel_version": "v0.5.20",
+      "core_version": "0.1.3",
       "suite_version": "v0.2.1",
-      "verification": "unobserved",
-      "recorded_at": "2026-11-12T02:59:40Z",
-      "run_id": "43145087134"
+      "verification": "verified",
+      "recorded_at": "2026-11-12T12:31:12Z",
+      "run_id": "43218562253"
     }
   },
   "requirements": {
