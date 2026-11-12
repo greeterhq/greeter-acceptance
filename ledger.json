@@ -18,32 +18,38 @@
       "run_id": "43144845929"
     },
     "http": {
-      "state": "missing",
+      "state": "current",
       "reasons": [
 
-      ]
+      ],
+      "channel_version": "v0.5.19",
+      "core_version": null,
+      "suite_version": "v0.2.1",
+      "verification": "unobserved",
+      "recorded_at": "2026-11-12T02:59:40Z",
+      "run_id": "43145087134"
     }
   },
   "requirements": {
     "greeting-count": {
       "cli": "not_applicable",
-      "http": "missing"
+      "http": "passed"
     },
     "greeting-happy": {
       "cli": "passed",
-      "http": "missing"
+      "http": "passed"
     },
     "greeting-idempotent": {
       "cli": "not_applicable",
-      "http": "missing"
+      "http": "passed"
     },
     "greeting-invalid": {
       "cli": "passed",
-      "http": "missing"
+      "http": "passed"
     },
     "greeting-returning": {
       "cli": "not_applicable",
-      "http": "missing"
+      "http": "passed"
     }
   }
 }

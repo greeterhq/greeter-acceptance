@@ -1,0 +1,43 @@
+{
+  "schema": "greeterhq.traceability.v2",
+  "run": {
+    "channel": "http",
+    "environment": "prod",
+    "suite_version": "v0.2.1",
+    "channel_version": "v0.5.19",
+    "channel_sha": "2b888c75104179827d5b386fe242bd9599ebfe30",
+    "core_version": null,
+    "verification": "unobserved",
+    "recorded_at": "2026-11-12T02:59:40Z",
+    "run_id": "43145087134",
+    "released_at": null,
+    "forced": null
+  },
+  "results": [
+    {
+      "requirement": "greeting-happy",
+      "scenario": "greet-new-guest",
+      "status": "passed"
+    },
+    {
+      "requirement": "greeting-invalid",
+      "scenario": "reject-empty-name",
+      "status": "passed"
+    },
+    {
+      "requirement": "greeting-count",
+      "scenario": "count-new-guest",
+      "status": "passed"
+    },
+    {
+      "requirement": "greeting-returning",
+      "scenario": "count-returning-guest",
+      "status": "passed"
+    },
+    {
+      "requirement": "greeting-idempotent",
+      "scenario": "idempotent-replay",
+      "status": "passed"
+    }
+  ]
+}
