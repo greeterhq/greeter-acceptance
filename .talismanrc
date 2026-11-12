@@ -82,9 +82,9 @@ fileignoreconfig:
 - filename: openspec/changes/publish-channel-ledger/design.md
   checksum: aea5ebfe988c69cf548fb548b64ee75fffae3a9ceb55fc175490883c80449049
 - filename: openspec/specs/driver-contract/spec.md
-  checksum: 1269d273b8c9e2f9d7d6e9f76808a172057adeb52fc3d174444b4d460e7963b2
+  checksum: a56be723169ab5ce5111c66ca382797c0191514bc45044c613bd47e42cbf2745
 - filename: openspec/specs/traceability/spec.md
-  checksum: 295dd9bae4ab4c456a8ef126a7e46ce3eadbfcb7166c6e90dbc6e24418456ba4
+  checksum: c97eff29f9fa58f90b7632a9e58c1a44a1536efdc5101088984af3f918eb0a30
 - filename: openspec/specs/greeting/spec.md
   checksum: a555470128358725aa291dee644a18d385ac227b1517ea9777c88b831de05b5a
 - filename: spec/environments_spec.rb
