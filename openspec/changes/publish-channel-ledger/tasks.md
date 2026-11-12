@@ -215,7 +215,7 @@ Notes for whoever applies this change:
   calls the gate (a `uses:` snippet and its inputs), the `channel-released`
   payload, manual runs, `rerun_all` and `force`, and the ledger branches. Verify
   every YAML snippet in the README parses.
-- [ ] 8.7 publish uses the ledger environment and a minted App token; only the
+- [x] 8.7 publish uses the ledger environment and a minted App token; only the
   mint step and TOKEN change
 
 ## 9. Verify and docs
