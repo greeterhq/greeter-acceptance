@@ -1,0 +1,11 @@
+{
+  "schema": "greeterhq.deployed.v1",
+  "environment": "prod",
+  "channels": {
+    "cli": {
+      "version": "v0.1.2",
+      "sha": "79c1784b554d26b35624aa00371bc86078c66686",
+      "run_id": "43140511844-1"
+    }
+  }
+}
