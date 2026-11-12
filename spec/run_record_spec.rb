@@ -127,6 +127,34 @@ RSpec.describe 'RunRecord' do
         'channel_sha' => 'def4567', 'verification' => 'verified'
       )
     end
+
+    it 'records the release time it is given' do
+      timed = GreeterAcceptance::RunRecord.new(
+        channel: :cli, environment: 'prod', suite_version: 'v0.2.0',
+        released_at: '2026-11-01T09:30:00Z', clock: clock
+      )
+
+      expect(timed.document['run']['released_at']).to eq('2026-11-01T09:30:00Z')
+    end
+  end
+
+  # CI passes every optional field through the environment, and a step output that
+  # was never set arrives as an empty string. An empty value means unknown.
+  describe 'optional run context given as empty strings' do
+    let(:blank) do
+      GreeterAcceptance::RunRecord.new(
+        channel: :http, environment: 'prod', suite_version: 'v0.2.0',
+        expected_version: 'v1.2.3', expected_sha: '', run_id: '', released_at: '', clock: clock
+      )
+    end
+
+    it 'records an empty release time as null' do
+      expect(blank.document['run']['released_at']).to be_nil
+    end
+
+    it 'records an empty sha and run id as null' do
+      expect(blank.document['run']).to include('channel_sha' => nil, 'run_id' => nil)
+    end
   end
 
   describe 'attribution' do
