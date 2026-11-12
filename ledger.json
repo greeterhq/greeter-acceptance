@@ -2,7 +2,7 @@
   "schema": "greeterhq.ledger.v2",
   "environment": "prod",
   "suite": {
-    "version": "v0.2.0"
+    "version": "v0.2.1"
   },
   "channels": {
     "cli": {
@@ -12,10 +12,10 @@
       ],
       "channel_version": "v0.1.2",
       "core_version": "0.1.3",
-      "suite_version": "v0.2.0",
+      "suite_version": "v0.2.1",
       "verification": "verified",
-      "recorded_at": "2026-11-12T02:20:04Z",
-      "run_id": "43140511844"
+      "recorded_at": "2026-11-12T02:57:50Z",
+      "run_id": "43144845929"
     },
     "http": {
       "state": "missing",
