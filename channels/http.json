@@ -3,13 +3,13 @@
   "run": {
     "channel": "http",
     "environment": "prod",
-    "suite_version": "v0.2.1",
+    "suite_version": "v0.2.2",
     "channel_version": "v0.5.20",
     "channel_sha": "13cbc85e0c4e679e2a70aaea3e1afa5b9c6b47aa",
     "core_version": "0.1.3",
     "verification": "verified",
-    "recorded_at": "2026-11-12T12:31:12Z",
-    "run_id": "43218562253",
+    "recorded_at": "2026-11-13T09:13:14Z",
+    "run_id": "43399424119",
     "released_at": null,
     "forced": null
   },
