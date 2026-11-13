@@ -73,6 +73,8 @@ fileignoreconfig:
   checksum: f74747f71ff593cf0c2afa4098aaf1eb3630654a9b8e979a851574add4d23131
 - filename: lib/greeter_acceptance/run_record.rb
   checksum: 1214970e365c8f44cea9495dace57892b27b86deee08426b6c5591dc2b807ca5
+- filename: openspec/changes/harden-candidate-install/tasks.md
+  checksum: 1ee10f82026d2dd3b6c7638c4355afcd1bf0857012fc3032b754fd645d45f6b7
 - filename: openspec/changes/publish-channel-ledger/specs/driver-contract/spec.md
   checksum: a90ccfeb9e264929eff467549b5d4537f00087261610270cf92669ba62371d20
 - filename: openspec/changes/publish-channel-ledger/proposal.md
