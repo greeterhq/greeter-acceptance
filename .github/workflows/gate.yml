@@ -11,9 +11,10 @@
 #       ...                       # builds the tarball and uploads it as an artifact
 #     gate:
 #       needs: build
-#       uses: greeterhq/greeter-acceptance/.github/workflows/gate.yml@v1
+#       # The ref after "@" must equal acceptance_ref; bump both together.
+#       uses: greeterhq/greeter-acceptance/.github/workflows/gate.yml@v0.2.2
 #       with:
-#         acceptance_ref: v0.2.0  # the suite version this repo pins (ACCEPTANCE_REF)
+#         acceptance_ref: v0.2.2  # the suite version this repo pins (ACCEPTANCE_REF)
 #         channel: cli
 #         candidate_version: v0.1.3
 #         candidate_sha: ${{ github.sha }}
@@ -22,10 +23,12 @@
 #     release:
 #       needs: gate               # the release does not run if the gate fails
 #
-# A job's `uses:` ref has to be a literal, so it cannot be the pinned suite
-# version. This file is therefore a thin shim: it checks out `acceptance_ref` and
-# runs everything from there, so what the gate does is pinned by that input
-# whichever version of this file is called.
+# A job's `uses:` ref has to be a literal, so it cannot be an expression such as
+# `${{ vars.ACCEPTANCE_REF }}`. This file is therefore a thin shim: it checks out
+# `acceptance_ref` and runs everything from there, so what the gate does is
+# pinned by that input. Callers write the same released tag in both places, so
+# the shim and the suite always come from the same version. Released `v*` tags
+# never move, and there is no moving major tag such as `v0` or `v1`.
 #
 # Artifact channel (cli): the caller uploads its built tarball as an artifact and
 # names it. The gate unpacks it and runs the suite against it, under the Ruby the

@@ -160,9 +160,10 @@ jobs:
     # builds the tarball and uploads it as an artifact
   gate:
     needs: build
-    uses: greeterhq/greeter-acceptance/.github/workflows/gate.yml@v1
+    # The ref after "@" must equal acceptance_ref; bump both together.
+    uses: greeterhq/greeter-acceptance/.github/workflows/gate.yml@v0.2.2
     with:
-      acceptance_ref: v0.2.0   # the suite version this repo pins
+      acceptance_ref: v0.2.2   # the suite version this repo pins
       channel: cli
       candidate_version: v0.1.3
       candidate_sha: ${{ github.sha }}
@@ -174,7 +175,7 @@ jobs:
 
 | Input | Meaning |
 | --- | --- |
-| `acceptance_ref` | the released suite version to run (required) |
+| `acceptance_ref` | the released suite version to run (required). Use the same tag as the ref after `@` in `uses:` |
 | `channel` | `cli` or `http` (required) |
 | `candidate_version` | the candidate's version, e.g. `v1.2.3` (required) |
 | `candidate_sha` | the candidate's commit (required) |
