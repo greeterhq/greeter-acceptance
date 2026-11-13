@@ -4,13 +4,13 @@
     "channel": "cli",
     "environment": "prod",
     "suite_version": "v0.2.2",
-    "channel_version": "v0.1.10",
-    "channel_sha": "772552be0d758c28256461a426cdbaac93c46a98",
+    "channel_version": "v0.1.12",
+    "channel_sha": "7970a538d0fc78d7d7bb33980ec9e1644b5bf0a7",
     "core_version": "0.1.3",
     "verification": "verified",
-    "recorded_at": "2026-11-13T11:33:53Z",
-    "run_id": "43417953587",
-    "released_at": "2026-11-13T11:32:43Z",
+    "recorded_at": "2026-11-13T12:39:40Z",
+    "run_id": "43426938025",
+    "released_at": "2026-11-13T12:38:36Z",
     "forced": null
   },
   "results": [
