@@ -6,16 +6,16 @@
   },
   "channels": {
     "cli": {
-      "state": "stale",
+      "state": "current",
       "reasons": [
-        "suite"
+
       ],
       "channel_version": "v0.1.2",
       "core_version": "0.1.3",
-      "suite_version": "v0.2.1",
+      "suite_version": "v0.2.2",
       "verification": "verified",
-      "recorded_at": "2026-11-12T03:55:55Z",
-      "run_id": "43151350268"
+      "recorded_at": "2026-11-13T09:13:48Z",
+      "run_id": "43399424119"
     },
     "http": {
       "state": "current",
