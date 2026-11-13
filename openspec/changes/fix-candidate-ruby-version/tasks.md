@@ -10,7 +10,7 @@ Notes for whoever applies this change:
 
 ## 1. Red tests
 
-- [ ] 1.1 Write `spec/cli_release_spec.rb`.
+- [x] 1.1 Write `spec/cli_release_spec.rb`.
   - **Setup:** load the script with
     `load File.expand_path('../bin/cli-release', __dir__)`, and write each
     fixture Gemfile into a `Dir.mktmpdir`.
@@ -34,7 +34,7 @@ Notes for whoever applies this change:
     - the `~>` and `>=` examples get the raw requirement (e.g. `"~> 3.3.5"`);
     - the refused examples report that no error was raised;
     - the `'< 4'` script example exits 0.
-- [ ] 1.2 Add the security examples from design.md (Security Considerations
+- [x] 1.2 Add the security examples from design.md (Security Considerations
   S2–S4) to `spec/cli_release_spec.rb`:
   - **S2:** a refused line containing a bidi override (`U+202E`) is named with
     `?` in its place.
@@ -54,12 +54,12 @@ Notes for whoever applies this change:
   - the size example returns a version;
   - the FIFO example times out;
   - the encoding example raises `ArgumentError`.
-- [ ] 1.3 Run RuboCop on `spec/cli_release_spec.rb`. Verify no offenses and a
+- [x] 1.3 Run RuboCop on `spec/cli_release_spec.rb`. Verify no offenses and a
   `frozen_string_literal` magic comment.
 
 ## 2. Ruby requirement reader
 
-- [ ] 2.1 In `CliRelease.ruby_version(dir)`, find the ruby lines:
+- [x] 2.1 In `CliRelease.ruby_version(dir)`, find the ruby lines:
   - strip leading whitespace;
   - skip lines that start with `#`;
   - a ruby line is `ruby` followed by a space or `(`;
@@ -69,20 +69,20 @@ Notes for whoever applies this change:
   string, optional parentheses, trailing spaces, optional trailing comment). The
   Gemfile is never evaluated. Verify the no-requirement, two-ruby-lines,
   parentheses, double-quote and trailing-comment examples pass.
-- [ ] 2.2 Translate the quoted requirement by the design's table:
+- [x] 2.2 Translate the quoted requirement by the design's table:
   - `X.Y.Z` and `= X.Y.Z` give `X.Y.Z`;
   - `~>` or `>=` with `X.Y.Z` or `X.Y` give `X.Y`;
   - everything else (including `X.Y` and `= X.Y`) fails.
 
   Then check the result matches `/\A\d+\.\d+(\.\d+)?\z/`, failing otherwise.
   Verify every accepted and refused example passes.
-- [ ] 2.3 Build the failure message "unsupported ruby requirement in Gemfile:
+- [x] 2.3 Build the failure message "unsupported ruby requirement in Gemfile:
   <line>": strip the line, replace every character outside printable ASCII
   (`\x20`–`\x7E`) with `?` (design S2), keep it to one line, and truncate to 80
   characters. Keep the CLI's existing rescue, so
   the script prints `bin/cli-release: …` on stderr and exits 1. Verify the
   tab-and-escape example and both `Open3` examples pass.
-- [ ] 2.4 Read the Gemfile safely (design S3–S5), before any line is matched:
+- [x] 2.4 Read the Gemfile safely (design S3–S5), before any line is matched:
   - refuse a Gemfile that `File.lstat` does not report as a regular file;
   - open it with `File::RDONLY | File::NOFOLLOW | File::NONBLOCK` and refuse if
     `stat.file?` is false;
@@ -94,17 +94,17 @@ Notes for whoever applies this change:
   KiB", "Gemfile is not valid UTF-8". Keep the grammar pattern anchored, with
   no back-references or lookaround. Verify every 1.2 example passes and no
   earlier example regresses.
-- [ ] 2.5 Update the `ruby-version` line in the script's header comment to
+- [x] 2.5 Update the `ruby-version` line in the script's header comment to
   describe the translation and the failure. Verify all of
   `spec/cli_release_spec.rb` passes and RuboCop reports no offenses for
   `bin/cli-release`.
 
 ## 3. Version and docs
 
-- [ ] 3.1 Set `GreeterAcceptance::VERSION` to `'0.2.2'`. Verify
+- [x] 3.1 Set `GreeterAcceptance::VERSION` to `'0.2.2'`. Verify
   `ruby -Ilib -rgreeter_acceptance/version -e 'puts GreeterAcceptance::VERSION'`
   prints `0.2.2`.
-- [ ] 3.2 In the README's gate section, document which Gemfile `ruby` lines an
+- [x] 3.2 In the README's gate section, document which Gemfile `ruby` lines an
   artifact channel may use and what each sets up:
   - exact `X.Y.Z` → that version;
   - `~>` / `>=` → the lowest `X.Y` series;
@@ -116,24 +116,24 @@ Notes for whoever applies this change:
 
 ## 4. Verify and docs
 
-- [ ] 4.1 Run the tooling specs with `bundle exec rspec`, and the driver contract
+- [x] 4.1 Run the tooling specs with `bundle exec rspec`, and the driver contract
   with `GREETER_CHANNEL=cli` (real greeter-cli launcher) and `GREETER_CHANNEL=http`
   (stage endpoint). Verify everything passes.
-- [ ] 4.2 Run `GREETER_CHANNEL=cli bundle exec cucumber` and
+- [x] 4.2 Run `GREETER_CHANNEL=cli bundle exec cucumber` and
   `GREETER_CHANNEL=http bundle exec cucumber`. Check each `tmp/traceability.json`
   against `docs/traceability-schema.md`. Verify the results match the previous
   release: on cli the universal scenarios pass and the capability scenarios are
   not applicable; on http all scenarios pass.
-- [ ] 4.3 Check the reader against a real release and the workflow shell:
+- [x] 4.3 Check the reader against a real release and the workflow shell:
   - `bin/cli-release fetch` greeter-cli v0.1.2 (Gemfile `ruby '3.3.5'`), then
     `bin/cli-release ruby-version` on it prints `3.3.5`;
   - a copy with its Gemfile line changed to `ruby '~> 3.3.5'` prints `3.3`;
   - the workflow's `declared="$(ruby bin/cli-release ruby-version "$dir")"`
     line, run under `bash -e` against a `'< 4'` Gemfile, stops with exit 1
     before its next command and prints the `bin/cli-release:` message.
-- [ ] 4.4 Confirm the files the change must not touch are unchanged. Verify
+- [x] 4.4 Confirm the files the change must not touch are unchanged. Verify
   `git diff main -- .github/workflows features` is empty.
-- [ ] 4.5 Run RuboCop, check `frozen_string_literal` on every Ruby file, and run
+- [x] 4.5 Run RuboCop, check `frozen_string_literal` on every Ruby file, and run
   `openspec validate fix-candidate-ruby-version --strict` and
   `openspec validate --all --strict`. Verify all pass.
 
