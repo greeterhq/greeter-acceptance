@@ -13,7 +13,13 @@
 #   bin/cli-release extract --tarball FILE --out DIR
 #       Unpacks a tarball the caller built (the gate). Prints the directory.
 #   bin/cli-release ruby-version DIR
-#       Prints the Ruby version DIR/Gemfile declares, or nothing.
+#       Prints the Ruby that DIR/Gemfile's `ruby` line requires, as a value
+#       ruby/setup-ruby accepts: X.Y.Z for `X.Y.Z` or `= X.Y.Z`, the series X.Y
+#       for `~> X.Y[.Z]` or `>= X.Y[.Z]`, or nothing when there is no ruby line.
+#       Anything else (a bare X.Y, other operators, options, two ruby lines, or
+#       a Gemfile that is a link, a special file, over 64 KiB or not UTF-8)
+#       fails with "unsupported ruby requirement in Gemfile: <line>" or the
+#       reason, and exits 1. The Gemfile is read as text, never evaluated.
 #   bin/cli-release install DIR --launcher FILE
 #       Runs `bundle install` in DIR with the Ruby on PATH now, and writes an
 #       executable launcher that runs the CLI with that Ruby. Use it after setting
@@ -75,9 +81,10 @@ module CliRelease
     top.first
   end
 
+  # The Ruby that DIR's Gemfile requires, as a value ruby/setup-ruby accepts,
+  # or nil when it declares none. See RubyRequirement below.
   def ruby_version(dir)
-    gemfile = File.join(dir, 'Gemfile')
-    File.read(gemfile)[/^\s*ruby\s+['"]([^'"]+)['"]/, 1]
+    RubyRequirement.of_gemfile(File.join(dir, 'Gemfile'))
   end
 
   def install(dir:, launcher:)
@@ -134,6 +141,74 @@ module CliRelease
     raise Failure, "#{command.first} failed: #{output.strip}" unless status.success?
 
     output
+  end
+
+  # Translates the `ruby` line of an artifact's Gemfile. The Gemfile is untrusted
+  # text: it is read, never evaluated, and only a plain X.Y or X.Y.Z comes out.
+  #   X.Y.Z, = X.Y.Z           -> X.Y.Z
+  #   ~> X.Y[.Z], >= X.Y[.Z]   -> X.Y   (setup-ruby installs its newest patch)
+  #   no ruby line             -> nil   (the workflows default to 3.3)
+  #   anything else            -> Failure, naming the line
+  # A bare X.Y is refused: Bundler reads it as exactly X.Y.0.
+  module RubyRequirement
+    GEMFILE_LIMIT = 64 * 1024
+    NOT_REGULAR = 'Gemfile is not a regular file'
+    # A ruby line starts with `ruby` followed by a space, a tab or "(".
+    RUBY_LINE = /\Aruby[ \t(]/
+    # One quoted string with no quotes, escapes or interpolation inside it.
+    QUOTED = %q{(?:'([^'"\\\\#]*)'|"([^'"\\\\#]*)")}
+    # `ruby 'req'` or `ruby('req')`, then an optional trailing comment. Anchored,
+    # with no back-references or lookaround, so matching stays linear.
+    LINE_SHAPE = /\Aruby(?:[ \t]+#{QUOTED}|[ \t]*\([ \t]*#{QUOTED}[ \t]*\))[ \t]*(?:#.*)?\z/
+    EXACT = /\A(?:=[ \t]*)?(\d+\.\d+\.\d+)\z/
+    SERIES = /\A(?:~>|>=)[ \t]*(\d+\.\d+)(?:\.\d+)?\z/
+    PLAIN_VERSION = /\A\d+\.\d+(\.\d+)?\z/
+
+    module_function
+
+    def of_gemfile(path)
+      lines = read(path).each_line.map(&:strip).grep(RUBY_LINE)
+      return nil if lines.empty?
+      raise Failure, unsupported(lines[1]) if lines.size > 1
+
+      version = translate(lines.first)
+      raise Failure, unsupported(lines.first) unless version.is_a?(String) && PLAIN_VERSION.match?(version)
+
+      version
+    end
+
+    # Reads a regular file of at most GEMFILE_LIMIT bytes holding valid UTF-8,
+    # without following a link or waiting on a special file.
+    def read(path)
+      raise Failure, NOT_REGULAR unless File.lstat(path).file?
+
+      content = File.open(path, File::RDONLY | File::NOFOLLOW | File::NONBLOCK) do |file|
+        raise Failure, NOT_REGULAR unless file.stat.file?
+
+        file.read(GEMFILE_LIMIT + 1) || String.new
+      end
+      raise Failure, 'Gemfile is larger than 64 KiB' if content.bytesize > GEMFILE_LIMIT
+
+      content.force_encoding(Encoding::UTF_8)
+      raise Failure, 'Gemfile is not valid UTF-8' unless content.valid_encoding?
+
+      content
+    rescue Errno::ELOOP
+      raise Failure, NOT_REGULAR
+    end
+
+    def translate(line)
+      match = LINE_SHAPE.match(line)
+      raise Failure, unsupported(line) if match.nil?
+
+      requirement = match.captures.compact.first.strip
+      EXACT.match(requirement)&.[](1) || SERIES.match(requirement)&.[](1)
+    end
+
+    # The line is untrusted: one line of printable ASCII, at most 80 characters.
+    def unsupported(line)
+      "unsupported ruby requirement in Gemfile: #{line.strip.gsub(/[^\x20-\x7E]/, '?')[0, 80]}"
+    end
   end
 end
 

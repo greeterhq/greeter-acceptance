@@ -185,6 +185,37 @@ jobs:
 A service channel is tested where it is deployed. The target comes from
 `config/environments.yml`, never from an input.
 
+An artifact channel runs under the Ruby its own Gemfile asks for. The gate and
+record mode both read the Gemfile's `ruby` line (`bin/cli-release
+ruby-version`) and set up a Ruby from it:
+
+| Gemfile `ruby` line | Ruby set up |
+| --- | --- |
+| `ruby '3.3.5'` or `ruby '= 3.3.5'` | 3.3.5 |
+| `ruby '~> 3.3.5'`, `ruby '~> 3.3'`, `ruby '>= 3.3.5'` | the newest 3.3 patch |
+| no `ruby` line | the newest 3.3 patch (the default) |
+
+- **Lower bound:** a `~>` or `>=` requirement runs on the lowest series it allows.
+- **Accepted forms:** `ruby('3.3.5')`, either quote style, and a trailing comment
+  are fine.
+- **Refused:**
+  - a bare `ruby '3.3'` or `ruby '= 3.3'` (Bundler reads it as exactly 3.3.0;
+    pin `3.3.5` or use `~> 3.3` instead);
+  - other operators (`<`, `!=`, `~> 3`);
+  - a second requirement;
+  - `engine:`, `file:` or `patchlevel:` options;
+  - suffixes such as `p100`;
+  - more than one `ruby` line.
+
+A refusal stops the job before the candidate is installed:
+
+```text
+bin/cli-release: unsupported ruby requirement in Gemfile: ruby '< 4'
+```
+
+A Gemfile that is a link or a special file, is over 64 KiB, or is not UTF-8 is
+refused the same way, with the reason instead of the line.
+
 ### Record: after a release
 
 `record.yml` runs the suite against what is deployed and records the result on a
