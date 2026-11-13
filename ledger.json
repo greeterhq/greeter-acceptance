@@ -10,12 +10,12 @@
       "reasons": [
 
       ],
-      "channel_version": "v0.1.3",
+      "channel_version": "v0.1.10",
       "core_version": "0.1.3",
       "suite_version": "v0.2.2",
       "verification": "verified",
-      "recorded_at": "2026-11-13T09:39:41Z",
-      "run_id": "43403049553"
+      "recorded_at": "2026-11-13T11:33:53Z",
+      "run_id": "43417953587"
     },
     "http": {
       "state": "current",
