@@ -2,13 +2,13 @@
   "schema": "greeterhq.ledger.v2",
   "environment": "stage",
   "suite": {
-    "version": "v0.2.1"
+    "version": "v0.2.2"
   },
   "channels": {
     "cli": {
-      "state": "current",
+      "state": "stale",
       "reasons": [
-
+        "suite"
       ],
       "channel_version": "v0.1.2",
       "core_version": "0.1.3",
@@ -24,10 +24,10 @@
       ],
       "channel_version": "v0.5.20",
       "core_version": "0.1.3",
-      "suite_version": "v0.2.1",
+      "suite_version": "v0.2.2",
       "verification": "verified",
-      "recorded_at": "2026-11-12T12:31:14Z",
-      "run_id": "43218555650"
+      "recorded_at": "2026-11-13T09:13:18Z",
+      "run_id": "43399424119"
     }
   },
   "requirements": {
