@@ -5,7 +5,7 @@ Suite v0.2.2
 | channel | state | channel version | core version | suite version | verification | recorded |
 | --- | --- | --- | --- | --- | --- | --- |
 | cli | current | v0.1.12 | 0.1.3 | v0.2.2 | verified | 2026-11-13, run #43426938025 |
-| http | current | v0.5.21 | 0.1.3 | v0.2.2 | verified | 2026-11-15, run #43744025405 |
+| http | current | v0.5.22 | 0.1.3 | v0.2.2 | verified | 2026-11-19, run #44628432793 |
 
 | requirement | cli | http |
 | --- | --- | --- |
