@@ -43,7 +43,12 @@ module CliRelease
   REPO = %r{\A[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*\z}
   VERSION = /\Av\d+\.\d+\.\d+\z/
   SHA = /\A[0-9a-f]{7,40}\z/
-  CLEAN_ENV = { 'BUNDLE_GEMFILE' => nil, 'BUNDLE_PATH' => nil, 'BUNDLE_BIN' => nil, 'RUBYOPT' => nil }.freeze
+  # BUNDLE_FROZEN makes the candidate's own Gemfile.lock authoritative: a missing
+  # or stale lockfile is refused instead of being re-resolved.
+  CLEAN_ENV = {
+    'BUNDLE_GEMFILE' => nil, 'BUNDLE_LOCKFILE' => nil, 'BUNDLE_PATH' => nil, 'BUNDLE_BIN' => nil,
+    'RUBYOPT' => nil, 'BUNDLE_FROZEN' => 'true'
+  }.freeze
 
   module_function
 
@@ -89,7 +94,10 @@ module CliRelease
 
   def install(dir:, launcher:)
     _output, status = Open3.capture2e(CLEAN_ENV, 'bundle', 'install', chdir: dir)
-    raise Failure, "bundle install failed in #{dir}" unless status.success?
+    unless status.success?
+      raise Failure,
+            "bundle install failed in #{dir} (the Gemfile.lock must be present and match the Gemfile)"
+    end
 
     File.write(launcher, launcher_script(File.expand_path(dir)))
     File.chmod(0o755, launcher)

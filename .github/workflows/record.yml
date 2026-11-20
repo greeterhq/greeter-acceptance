@@ -184,6 +184,20 @@ jobs:
           bundler-cache: true
 
       # ── artifact channel ────────────────────────────────────────────────────
+      # The only step that sees a token: it reads the release's publish time from
+      # the GitHub API and runs no downloaded code. It runs before the fetch so no
+      # release code (the install evaluates its Gemfile) can have touched PATH or
+      # the runner's file commands by the time the token is used.
+      - name: Look up when the release was published
+        if: matrix.channel == 'cli'
+        id: released
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ matrix.repo }}
+          VERSION: ${{ matrix.version }}
+        run: echo "at=$(gh api "repos/${REPO}/releases/tags/${VERSION}" --jq .published_at)" >> "$GITHUB_OUTPUT"
+
       - name: Fetch the release (checksum and tag checked)
         if: matrix.channel == 'cli'
         id: fetch
@@ -221,18 +235,6 @@ jobs:
         with:
           ruby-version: ${{ env.RUBY_VERSION }}
           bundler-cache: true
-
-      # The only step that sees a token: it reads the release's publish time from
-      # the GitHub API and runs no downloaded code.
-      - name: Look up when the release was published
-        if: matrix.channel == 'cli'
-        id: released
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ matrix.repo }}
-          VERSION: ${{ matrix.version }}
-        run: echo "at=$(gh api "repos/${REPO}/releases/tags/${VERSION}" --jq .published_at)" >> "$GITHUB_OUTPUT"
 
       # ── run ─────────────────────────────────────────────────────────────────
       - name: Run the suite
