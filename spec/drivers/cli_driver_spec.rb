@@ -12,7 +12,9 @@ RSpec.describe 'CliDriver' do
 
   it_behaves_like 'a GreeterDriver'
 
-  describe 'when the greeter command cannot be run' do
+  describe 'when the greeter command cannot be run',
+           requirement: 'a-driver-translates-its-channel-idiom-to-neutral-outcomes',
+           scenario: 'a-failing-channel-maps-to-the-neutral-infrastructure-error' do
     let(:unreachable_driver) do
       GreeterAcceptance::Drivers::CliDriver.new(command: '/nonexistent/greeter')
     end

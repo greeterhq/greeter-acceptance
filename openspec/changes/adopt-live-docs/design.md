@@ -202,6 +202,13 @@ CI: artifact `repo-trace` (RSpec results for tooling requirements, from three jo
 `docs-refresh {repo}`. Record mode: `docs-refresh {repo, ledger}`; `greeting`
 results are read from the ledger branch. No Cucumber result is added to the repo trace.
 
+### Examples left untagged by design
+An example carries a `requirement:`/`scenario:` pair only when it verifies a scenario of a requirement. These do not, and stay untagged:
+- every example in `spec/tag_only_diff_spec.rb` (the tag-only check is a tool for this change; the delta has no requirement for it);
+- in `spec/capability_gating_spec.rb`, "runs a scenario with no capability tag" and "leaves the repository tmp/traceability.json alone";
+- in `spec/workflow_token_order_spec.rb`, the two "has at least one job that installs a candidate" guards;
+- in `spec/trace_check_spec.rb`, the examples that check the tag map's completeness are tagged (to "The requirement-tag map covers the greeting headings"); only the tag-only diff examples are untagged.
+
 ## Security considerations
 
 Reviewed: formatter, trace-check, both workflow edits and the cross-repo dispatch.

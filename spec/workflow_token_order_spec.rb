@@ -46,25 +46,43 @@ module TokenOrder
 end
 
 RSpec.describe 'workflow token order' do
-  TokenOrder::WORKFLOWS.each do |file, path|
-    describe file do
-      it 'has at least one job that installs a candidate' do
-        expect(TokenOrder.candidate_jobs(path)).not_to be_empty
-      end
+  describe 'gate.yml' do
+    let(:path) { TokenOrder::WORKFLOWS.fetch('gate.yml') }
 
-      it 'has no step after the first candidate install that references a token' do
-        offenders = TokenOrder.offenders(path)
+    it 'has at least one job that installs a candidate' do
+      expect(TokenOrder.candidate_jobs(path)).not_to be_empty
+    end
 
-        expect(offenders).to be_empty,
-                             "steps that reference a token after the candidate install: #{offenders.join('; ')}"
-      end
+    it 'has no step after the first candidate install that references a token',
+       requirement: 'no-credential-is-reachable-after-candidate-code-has-run-in-the-gate',
+       scenario: 'steps-after-the-candidate-s-install' do
+      offenders = TokenOrder.offenders(path)
+
+      expect(offenders).to be_empty,
+                           "steps that reference a token after the candidate install: #{offenders.join('; ')}"
     end
   end
 
   describe 'record.yml' do
-    let(:names) { TokenOrder.steps_by_job(TokenOrder::WORKFLOWS.fetch('record.yml')).fetch('run').map { |step| step['name'] } }
+    let(:path) { TokenOrder::WORKFLOWS.fetch('record.yml') }
+    let(:names) { TokenOrder.steps_by_job(path).fetch('run').map { |step| step['name'] } }
 
-    it 'looks up when the release was published before it fetches the release' do
+    it 'has at least one job that installs a candidate' do
+      expect(TokenOrder.candidate_jobs(path)).not_to be_empty
+    end
+
+    it 'has no step after the first candidate install that references a token',
+       requirement: 'no-credential-is-reachable-after-candidate-code-has-run-in-a-record-run',
+       scenario: 'looking-up-a-release-s-publish-time' do
+      offenders = TokenOrder.offenders(path)
+
+      expect(offenders).to be_empty,
+                           "steps that reference a token after the candidate install: #{offenders.join('; ')}"
+    end
+
+    it 'looks up when the release was published before it fetches the release',
+       requirement: 'no-credential-is-reachable-after-candidate-code-has-run-in-a-record-run',
+       scenario: 'looking-up-a-release-s-publish-time' do
       lookup = names.index('Look up when the release was published')
       fetch = names.index('Fetch the release (checksum and tag checked)')
 

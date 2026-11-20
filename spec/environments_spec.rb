@@ -8,7 +8,9 @@ RSpec.describe 'Environments' do
   let(:config) { environments.new(environments_config) }
 
   describe '#resolve' do
-    it 'resolves an http target from the committed configuration' do
+    it 'resolves an http target from the committed configuration',
+       requirement: 'targets-are-read-from-committed-configuration',
+       scenario: 'an-environment-resolves-to-its-configured-target' do
       target = config.resolve(environment: 'prod', channel: 'http')
 
       expect(target.base_url).to eq('https://prodapi1.execute-api.eu-west-2.amazonaws.com')
@@ -18,12 +20,15 @@ RSpec.describe 'Environments' do
       expect(config.resolve(environment: 'prod', channel: 'cli').repo).to eq('greeterhq/greeter-cli')
     end
 
-    it 'refuses a request that carries a target address, before anything else' do
+    it 'refuses a request that carries a target address, before anything else',
+       requirement: 'targets-are-read-from-committed-configuration', scenario: 'a-supplied-target-address-is-refused' do
       expect { config.resolve(environment: 'prod', channel: 'http', requested_address: 'https://evil.test') }
         .to raise_error(environments::Refused, /address/)
     end
 
-    it 'refuses a target whose host does not match the environment pattern' do
+    it 'refuses a target whose host does not match the environment pattern',
+       requirement: 'a-target-host-must-match-its-environment-s-allowed-pattern',
+       scenario: 'a-host-that-does-not-match-the-pattern' do
       bad = environments_config
       bad['environments']['prod']['channels']['http']['base_url'] = 'https://evil.example.com'
 
@@ -31,19 +36,23 @@ RSpec.describe 'Environments' do
         .to raise_error(environments::Refused, /host.*prod|prod.*host/)
     end
 
-    it 'refuses an unknown environment and names it' do
+    it 'refuses an unknown environment and names it',
+       requirement: 'unknown-environments-and-channels-are-refused', scenario: 'an-unknown-environment' do
       expect { config.resolve(environment: 'dev', channel: 'http') }
         .to raise_error(environments::Refused, /unknown environment 'dev'/)
     end
 
-    it 'refuses a channel with no target in the environment and names it' do
+    it 'refuses a channel with no target in the environment and names it',
+       requirement: 'unknown-environments-and-channels-are-refused',
+       scenario: 'a-channel-with-no-target-in-the-environment' do
       expect { config.resolve(environment: 'stage', channel: 'cli') }
         .to raise_error(environments::Refused, /no target for channel 'cli' in environment 'stage'/)
     end
   end
 
   describe 'lookups' do
-    it 'returns the ledger branch of an environment' do
+    it 'returns the ledger branch of an environment',
+       requirement: 'each-environment-publishes-to-its-own-ledger-branch', scenario: 'a-production-result' do
       expect(config.ledger_branch('stage')).to eq('ledger-stage')
     end
 
@@ -71,7 +80,9 @@ RSpec.describe 'Environments' do
       expect(committed.environments).to include('prod', 'stage')
     end
 
-    it 'resolves every channel of every environment, so each host matches its pattern' do
+    it 'resolves every channel of every environment, so each host matches its pattern',
+       requirement: 'a-target-host-must-match-its-environment-s-allowed-pattern',
+       scenario: 'a-host-that-matches-the-pattern' do
       committed.environments.each do |environment|
         committed.channels_for(environment).each do |channel|
           expect { committed.resolve(environment: environment, channel: channel) }.not_to raise_error

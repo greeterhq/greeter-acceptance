@@ -11,7 +11,8 @@ RSpec.describe 'EventValidation' do
     validation.validate(payload.merge(overrides), environments: environments)
   end
 
-  describe 'a valid event' do
+  describe 'a valid event',
+           requirement: 'a-channel-released-event-is-validated-before-use', scenario: 'a-valid-event' do
     it 'is returned with exactly its allowed fields' do
       expect(validate).to eq(payload)
     end
@@ -25,7 +26,8 @@ RSpec.describe 'EventValidation' do
     end
   end
 
-  describe 'the channel and environment' do
+  describe 'the channel and environment',
+           requirement: 'a-channel-released-event-is-validated-before-use', scenario: 'a-malformed-event' do
     it 'refuses an unknown channel and names it' do
       expect { validate('channel' => 'web') }.to raise_error(validation::Invalid, /channel.*web/)
     end
@@ -35,7 +37,8 @@ RSpec.describe 'EventValidation' do
     end
   end
 
-  describe 'the version' do
+  describe 'the version',
+           requirement: 'a-channel-released-event-is-validated-before-use', scenario: 'a-malformed-event' do
     ['latest', 'v1.2', 'v1.2.3; rm -rf /', 'v1.2.3 [x](http://evil.test)', "v1.2.3\nv9.9.9"].each do |bad|
       it "refuses #{bad.inspect}" do
         expect { validate('version' => bad) }.to raise_error(validation::Invalid, /version/)
@@ -43,7 +46,8 @@ RSpec.describe 'EventValidation' do
     end
   end
 
-  describe 'the commit identifier' do
+  describe 'the commit identifier',
+           requirement: 'a-channel-released-event-is-validated-before-use', scenario: 'a-malformed-event' do
     ['', 'abc', 'xyz1234', 'not-a-sha', 'abc1234; ls'].each do |bad|
       it "refuses #{bad.inspect}" do
         expect { validate('sha' => bad) }.to raise_error(validation::Invalid, /sha/)
@@ -51,7 +55,8 @@ RSpec.describe 'EventValidation' do
     end
   end
 
-  describe 'required fields' do
+  describe 'required fields',
+           requirement: 'a-channel-released-event-is-validated-before-use', scenario: 'a-malformed-event' do
     %w[channel version sha environment].each do |field|
       it "refuses an event with no #{field}" do
         expect { validation.validate(payload.reject { |key, _| key == field }, environments: environments) }

@@ -11,7 +11,9 @@ RSpec.describe 'HttpDriver' do
 
   it_behaves_like 'a GreeterDriver'
 
-  describe 'when the service cannot be reached' do
+  describe 'when the service cannot be reached',
+           requirement: 'a-driver-translates-its-channel-idiom-to-neutral-outcomes',
+           scenario: 'a-failing-channel-maps-to-the-neutral-infrastructure-error' do
     let(:unreachable_driver) do
       GreeterAcceptance::Drivers::HttpDriver.new(base_url: 'http://127.0.0.1:1')
     end

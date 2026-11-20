@@ -27,6 +27,13 @@ RSpec/DescribeClass:
 # A contract example may assert a few facets of one behaviour together.
 RSpec/MultipleExpectations:
   Max: 3
+  # adopt-live-docs: the workflow-shape and merge-script specs check one
+  # scenario's several facts together (a job's needs, permissions and steps).
+  Exclude:
+    - 'spec/ci_workflow_spec.rb'
+    - 'spec/record_workflow_spec.rb'
+    - 'spec/workflows/gate_workflow_spec.rb'
+    - 'spec/bin/repo_trace_merge_spec.rb'
 
 # Keyword arguments are how these classes take their context; only positional
 # parameter lists are worth limiting.
@@ -37,6 +44,14 @@ Metrics/ParameterLists:
 # shared fixtures are part of the example, not noise.
 RSpec/ExampleLength:
   Max: 12
+  # adopt-live-docs: a trace document or a workflow job is several lines to build
+  # and assert.
+  Exclude:
+    - 'spec/ci_workflow_spec.rb'
+    - 'spec/record_workflow_spec.rb'
+    - 'spec/trace_check_spec.rb'
+    - 'spec/bin/repo_trace_merge_spec.rb'
+    - 'spec/repo_trace_formatter_spec.rb'
 
 RSpec/MultipleMemoizedHelpers:
   Max: 8
@@ -45,3 +60,18 @@ RSpec/MultipleMemoizedHelpers:
 Style/Documentation:
   Exclude:
     - 'features/support/**/*'
+
+# adopt-live-docs: fixtures are example files the specs read or run in a
+# subprocess. They must not end in _spec.rb (the suite would load them), and their
+# assertions are trivial literals: only the pass/fail status matters.
+RSpec/SpecFilePathSuffix:
+  Exclude:
+    - 'spec/fixtures/**/*'
+
+RSpec/ExpectActual:
+  Exclude:
+    - 'spec/fixtures/**/*'
+
+RSpec/IdenticalEqualityAssertion:
+  Exclude:
+    - 'spec/fixtures/**/*'

@@ -7,7 +7,9 @@ require 'securerandom'
 RSpec.shared_examples 'a GreeterDriver' do
   let(:guest) { "guest-#{SecureRandom.hex(4)}" }
 
-  describe 'port surface' do
+  describe 'port surface',
+           requirement: 'every-driver-exposes-the-greeterdriver-port-surface',
+           scenario: 'a-driver-answers-the-port-surface' do
     %i[
       channel capabilities supports? greet count_for
       last_error last_native_error native_idiom_for? build_info
@@ -18,7 +20,9 @@ RSpec.shared_examples 'a GreeterDriver' do
     end
   end
 
-  describe 'capability declaration' do
+  describe 'capability declaration',
+           requirement: 'a-driver-declares-its-capabilities-honestly',
+           scenario: 'the-capability-query-agrees-with-the-declared-set' do
     it 'declares its capabilities as a set of symbols' do
       expect(driver.capabilities).to be_a(Set)
       expect(driver.capabilities).to all(be_a(Symbol))
@@ -33,20 +37,26 @@ RSpec.shared_examples 'a GreeterDriver' do
   end
 
   describe 'neutral outcomes' do
-    it 'maps a valid greeting to the neutral greeted outcome' do
+    it 'maps a valid greeting to the neutral greeted outcome',
+       requirement: 'a-driver-translates-its-channel-idiom-to-neutral-outcomes',
+       scenario: 'a-successful-greeting-maps-to-the-neutral-greeted-outcome' do
       result = driver.greet(guest)
 
       expect(result.outcome).to eq(:greeted)
       expect(result.guest_name).to eq(guest)
     end
 
-    it 'does not expose channel idiom on the greet result' do
+    it 'does not expose channel idiom on the greet result',
+       requirement: 'a-driver-translates-its-channel-idiom-to-neutral-outcomes',
+       scenario: 'a-successful-greeting-maps-to-the-neutral-greeted-outcome' do
       result = driver.greet(guest)
 
       expect(result.members).to contain_exactly(:message, :guest_name, :count, :outcome)
     end
 
-    it 'maps an invalid name to the neutral invalid_name error' do
+    it 'maps an invalid name to the neutral invalid_name error',
+       requirement: 'a-driver-translates-its-channel-idiom-to-neutral-outcomes',
+       scenario: 'an-invalid-name-maps-to-the-neutral-invalid-name-error' do
       driver.greet('')
 
       expect(driver.last_error).to eq(:invalid_name)
@@ -54,7 +64,9 @@ RSpec.shared_examples 'a GreeterDriver' do
   end
 
   describe 'count observability' do
-    it 'reports :not_applicable when counting is unsupported' do
+    it 'reports :not_applicable when counting is unsupported',
+       requirement: 'a-driver-reports-an-unobservable-count-neutrally',
+       scenario: 'count-query-on-a-channel-without-counting' do
       skip 'driver supports counting' if driver.supports?(:counting)
 
       expect(driver.count_for(guest)).to eq(:not_applicable)
@@ -70,11 +82,15 @@ RSpec.shared_examples 'a GreeterDriver' do
   end
 
   describe 'build information' do
-    it 'reports channel and core versions, or nil when the channel does not report them' do
+    it 'reports channel and core versions, or nil when the channel does not report them',
+       requirement: 'a-driver-reports-the-build-information-of-its-channel',
+       scenario: 'a-channel-that-reports-its-versions' do
       expect(driver.build_info).to be_nil.or(respond_to(:channel_version, :core_version))
     end
 
-    it 'changes no count when it is requested' do
+    it 'changes no count when it is requested',
+       requirement: 'a-driver-reports-the-build-information-of-its-channel',
+       scenario: 'reporting-leaves-the-channel-unchanged' do
       skip 'driver does not support counting' unless driver.supports?(:counting)
 
       driver.greet(guest)

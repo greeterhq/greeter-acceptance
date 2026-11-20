@@ -8,7 +8,9 @@ RSpec.describe 'Publisher guards' do
   describe 'version ordering' do
     before { publish_result(version: 'v1.2.3') }
 
-    it 'refuses a result for an older channel version and leaves the branch unchanged' do
+    it 'refuses a result for an older channel version and leaves the branch unchanged',
+       requirement: 'an-older-channel-version-does-not-overwrite-a-newer-result',
+       scenario: 'an-older-version-arrives-late' do
       head = branch_head(remote, 'ledger-prod')
 
       expect { publish_result(version: 'v1.2.2') }.to raise_error(refused, /older/)
@@ -21,7 +23,9 @@ RSpec.describe 'Publisher guards' do
       expect(stored('ledger.json')['requirements']['greeting-happy']['http']).to eq('failed')
     end
 
-    it 'replaces the result when the version is newer' do
+    it 'replaces the result when the version is newer',
+       requirement: 'an-older-channel-version-does-not-overwrite-a-newer-result',
+       scenario: 'the-same-or-a-newer-version' do
       publish_result(version: 'v1.2.4')
 
       expect(stored('channels/http.json')['run']['channel_version']).to eq('v1.2.4')
@@ -43,7 +47,8 @@ RSpec.describe 'Publisher guards' do
   describe 'forcing' do
     before { publish_result(version: 'v1.2.3') }
 
-    it 'lets a forced publication replace a newer version and records who forced it' do
+    it 'lets a forced publication replace a newer version and records who forced it',
+       requirement: 'a-forced-publication-is-marked', scenario: 'a-rollback-is-forced' do
       publish_result(version: 'v1.2.2', force: true, actor: 'octocat')
 
       expect(stored('channels/http.json')['run']).to include('channel_version' => 'v1.2.2', 'forced' => 'octocat')
@@ -80,7 +85,8 @@ RSpec.describe 'Publisher guards' do
       build_publisher.publish(channel: channel, result: result, deployment: deployment)
     end
 
-    it 'drops fields outside the allowed set at every level' do
+    it 'drops fields outside the allowed set at every level',
+       requirement: 'publishing-treats-the-channel-s-result-as-untrusted-data', scenario: 'unexpected-fields' do
       publish_tampered do |result|
         result['evil'] = 'x'
         result['run']['evil'] = 'y'
@@ -93,7 +99,9 @@ RSpec.describe 'Publisher guards' do
       expect(stored_result['results'].first.keys).not_to include('evil')
     end
 
-    it 'refuses a result that names a channel other than the one being recorded' do
+    it 'refuses a result that names a channel other than the one being recorded',
+       requirement: 'publishing-treats-the-channel-s-result-as-untrusted-data',
+       scenario: 'a-result-for-a-different-channel' do
       expect { publish_tampered(channel: 'cli') }.to raise_error(refused, /channel/)
     end
 
@@ -102,7 +110,8 @@ RSpec.describe 'Publisher guards' do
         .to raise_error(refused, /status/)
     end
 
-    it 'refuses a requirement name that carries markup' do
+    it 'refuses a requirement name that carries markup',
+       requirement: 'publishing-treats-the-channel-s-result-as-untrusted-data', scenario: 'text-containing-markup' do
       expect { publish_tampered { |result| result['results'].first['requirement'] = 'a|[x](http://evil.test)' } }
         .to raise_error(refused, /requirement/)
     end

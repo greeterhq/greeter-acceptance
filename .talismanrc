@@ -76,9 +76,9 @@ fileignoreconfig:
 - filename: openspec/changes/adopt-live-docs/proposal.md
   checksum: 7e5b3238dc46b9ced6350861098dee619f68fe8f327af5cc7710134c00b5d4ab
 - filename: openspec/changes/adopt-live-docs/specs/live-docs-traceability/spec.md
-  checksum: 8b473c5c39c36a35d0f77348cb8edb50b3d2d84f8a0a21ee2bd904ad3a29bfe2
+  checksum: 25a8687a78c5575dd9ebcba0da3ab86bf655dcd2795835d9b56f7c8be91ef23b
 - filename: openspec/changes/adopt-live-docs/tasks.md
-  checksum: f487ced7a4e14915ea7d4c855516a35b14c76fcecfb2112ac4056a2fda107e3e
+  checksum: d64114cc75bc667999e7c5abfffd4a072a8111fd4d74d3ad6c89a90a207a60a7
 - filename: openspec/changes/adopt-live-docs/design.md
   checksum: 0d3137fcaf84647115c2aa16f103f48e0bfe852d8c4832306683e2487b7508c3 
 - filename: openspec/specs/driver-contract/spec.md
@@ -87,8 +87,16 @@ fileignoreconfig:
   checksum: c97eff29f9fa58f90b7632a9e58c1a44a1536efdc5101088984af3f918eb0a30
 - filename: openspec/specs/greeting/spec.md
   checksum: a555470128358725aa291dee644a18d385ac227b1517ea9777c88b831de05b5a
+- filename: spec/bin/repo_trace_merge_spec.rb
+  checksum: 239418691fd174a7000eb6c3efe14d5d4813c9163c6e21c3aebe832da9a5efa1
+- filename: spec/ci_workflow_spec.rb
+  checksum: 6349a5c6cbd39bf0f608da455f4b7eb11379e4395407264ceb09606506bb8f9f
 - filename: spec/environments_spec.rb
-  checksum: 9e8c9b4e84d9e5afb46f1647d8952f1239deeb594557cebe2c209dd5f1c428e3
+  checksum: b87b4f45b1848eedc8cb17b0a86673fa07fca14c85932819002110a2b4d7b644
+- filename: spec/fixtures/repo_trace/statuses.rb
+  checksum: f411a964c0bf33638869cbcabbd178400351b8edb2ffdca3aaf02f30a4ea3d3a
+- filename: spec/ledger_spec.rb
+  checksum: 51d2681e3e8a6637baf489b023be23dbc5279b3c3d20174085756547c08f7525
 - filename: spec/ledger_renderer_spec.rb
   checksum: c0b56045f31d85666f32ce81fc8e8daca706b8308572aadcba1e9edbc0718eb9
 - filename: spec/observed_driver_spec.rb
@@ -97,6 +105,8 @@ fileignoreconfig:
   checksum: 6b1331152a3d40b4c7c34af03bd26f3de93a08bb698aa4abcf0d13a80d9fa94a
 - filename: spec/deployed_spec.rb
   checksum: 2799ace108440816a53e43ea7e547a159af9bbef63755cda97fe479681e26ea9
+- filename: spec/slug_spec.rb
+  checksum: bb6bc53efe412b7553c1c4e26e4fac80c0b917310063da50e805b8aa1179cd32
 - filename: spec/support/ledger_fixtures.rb
   checksum: b77d6ea84f439b390085bee93e817e5dc4344c5c07905abdb3e81dfd7c773f68
 - filename: spec/event_validation_spec.rb
@@ -107,6 +117,12 @@ fileignoreconfig:
   checksum: 95339f64d17e3cdec7cb8aecd4dcf22d69120e4e31cb4c3e2c595d2705a104ec
 - filename: spec/gate_verdict_spec.rb
   checksum: d04ff6f88187d9bf22d8b97c183594b6eba5f990e86dd44c95952a69a6f75ac6
+- filename: spec/repo_trace_formatter_spec.rb
+  checksum: 29f8485c47bfdea3a9d56dd8cfd589d9e6a6494ed3cd536c0ce22b8f6533266a
+- filename: spec/record_workflow_spec.rb
+  checksum: 0c37162ab59690542b6d862070a212d7e089f534c9e23d7ef3c8a73980f7c1f2
 - filename: spec/run_record_spec.rb
   checksum: 4a3cfa70fca333b71b7daf671394c1e0c7b1d8a686d004602fe18aa90afeca0c
+- filename: spec/workflows/gate_workflow_spec.rb
+  checksum: befa3fc7924a8abd0f890b14c0cf4ebd4fbcb3165ce8008ea834ac67f778a63c
 version: ""
