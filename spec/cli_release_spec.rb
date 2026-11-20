@@ -185,4 +185,42 @@ RSpec.describe 'CliRelease.ruby_version' do
       expect(stdout).to be_empty
     end
   end
+
+  # harden-candidate-install: the candidate is installed exactly as its own
+  # Gemfile.lock pins it, or not at all. The Gemfile has no gems, so no network
+  # is needed.
+  describe 'install' do
+    let(:launcher) { File.join(dir, 'launcher') }
+    let(:lockfile) { File.join(dir, 'Gemfile.lock') }
+    let(:bundler_env) do
+      { 'BUNDLE_GEMFILE' => nil, 'BUNDLE_PATH' => nil, 'BUNDLE_BIN' => nil, 'BUNDLE_FROZEN' => nil, 'RUBYOPT' => nil }
+    end
+
+    def lock_gemfile
+      _output, status = Open3.capture2e(bundler_env, 'bundle', 'lock', chdir: dir)
+      raise 'bundle lock failed' unless status.success?
+    end
+
+    before { File.write(gemfile, "source 'https://rubygems.org'\n") }
+
+    it 'refuses a candidate with no Gemfile.lock' do
+      expect { CliRelease.install(dir: dir, launcher: launcher) }
+        .to raise_error(failure, /Gemfile\.lock must be present and match the Gemfile/)
+    end
+
+    it 'refuses a candidate whose Gemfile.lock no longer matches its Gemfile' do
+      lock_gemfile
+      File.write(gemfile, "source 'https://rubygems.org'\ngem 'json'\n")
+
+      expect { CliRelease.install(dir: dir, launcher: launcher) }
+        .to raise_error(failure, /Gemfile\.lock must be present and match the Gemfile/)
+    end
+
+    it 'writes an executable launcher for a candidate whose Gemfile.lock matches' do
+      lock_gemfile
+
+      expect(CliRelease.install(dir: dir, launcher: launcher)).to eq(File.expand_path(launcher))
+      expect(File.executable?(launcher)).to be(true)
+    end
+  end
 end

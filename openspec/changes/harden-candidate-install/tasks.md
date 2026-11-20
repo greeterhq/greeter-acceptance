@@ -17,7 +17,7 @@ Notes for whoever applies this change:
 
 ## 1. Red tests
 
-- [ ] 1.1 Add `install` examples to `spec/cli_release_spec.rb`. Each uses a
+- [x] 1.1 Add `install` examples to `spec/cli_release_spec.rb`. Each uses a
   tmpdir holding a Gemfile with `source 'https://rubygems.org'` and no gems,
   so no network is needed.
   - No `Gemfile.lock`: raises `CliRelease::Failure` with a message saying the
@@ -28,7 +28,7 @@ Notes for whoever applies this change:
 
   Verify red for the right reason: the first two examples report that no error
   was raised, because today's install re-resolves.
-- [ ] 1.2 Write `spec/workflow_token_order_spec.rb`, per the design's
+- [x] 1.2 Write `spec/workflow_token_order_spec.rb`, per the design's
   "ordering spec":
   - for `record.yml` and `gate.yml`, no step after the first
     `bin/cli-release install` step references `secrets.`, `github.token` or
@@ -39,7 +39,7 @@ Notes for whoever applies this change:
 
   Verify red for the right reason: the `record.yml` examples fail naming "Look
   up when the release was published", and the `gate.yml` example passes.
-- [ ] 1.3 Run RuboCop on both spec files. Verify no offenses and a
+- [x] 1.3 Run RuboCop on both spec files. Verify no offenses and a
   `frozen_string_literal` magic comment.
 
 ## 2. Frozen install and step order
@@ -75,10 +75,11 @@ Notes for whoever applies this change:
   `GREETER_CHANNEL=http bundle exec cucumber`. Check each `tmp/traceability.json`
   against `docs/traceability-schema.md`. Verify the results match the previous
   release.
-- [ ] 4.3 Run `bin/cli-release fetch` greeter-cli v0.1.2, then
-  `bin/cli-release install` on it, under Ruby 3.3.5. Verify the frozen install
-  succeeds and the launcher prints `greeter-cli 0.1.2 (greeter-core 0.1.3)`,
-  which shows the shipped lockfile matches.
+- [ ] 4.3 Run `bin/cli-release fetch` greeter-cli v0.1.12 (the version on both
+  ledgers), then `bin/cli-release install` on it, under Ruby 3.3.5. Verify the
+  frozen install succeeds and the launcher prints
+  `greeter-cli 0.1.12 (greeter-core 0.1.3)`, which shows the shipped lockfile
+  matches.
 - [ ] 4.4 Confirm the files that must not change are unchanged. Verify
   `git diff main -- features .github/workflows/gate.yml` is empty.
 - [ ] 4.5 Run RuboCop, check `frozen_string_literal` on every Ruby file, and run
