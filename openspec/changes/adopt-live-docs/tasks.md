@@ -1,0 +1,40 @@
+## 0. Before starting
+
+- [ ] 0.1 Confirm `harden-candidate-install` is applied, released as v0.3.0 and archived, and this branch is rebased on `main`; then re-list the headings in `openspec/specs/**` (they feed the slug table and the tags)
+
+## 1. Red tests
+
+Edits under `spec/` need `touch tmp/allow-test-edits` (see `bin/guard-test-edits`); remove it when this section is done. Show each new spec red for the right reason (NameError or an expectation failure).
+
+- [ ] 1.1 Write `spec/support/slug_spec.rb`: a hand-written table plus a hand-written slug for every requirement and scenario heading in `openspec/specs/**` and in this change's delta, and a check that every heading has a row; show red with NameError
+- [ ] 1.2 Write `spec/trace_check_spec.rb` and fixtures in `spec/fixtures/trace_check/`: covered requirement; tooling requirement with no example; unknown requirement slug; scenario slug under the wrong requirement; scenario slug equal to its requirement slug; in-flight deltas (ADDED/MODIFIED known, archived-only unknown, REMOVED/RENAMED ignored, using a `changes/**` glob); a map entry whose Cucumber tag is carried by no scenario; a `@requirement-*` tag outside the map; a map key that is no heading slug; plus real-repo examples for the tooling requirements and for `openspec/requirement-tags.yml` against `greeting` and `features/*.feature`; show red
+- [ ] 1.3 Write `spec/support/repo_trace_formatter_spec.rb` and `spec/fixtures/repo_trace/*.rb`: v1 fields with `repo` `greeter-acceptance`, passed/failed, skipped versus pending, sha/run_id from env and from `git rev-parse HEAD`, no description (`Alice Smith`) and exact result keys, a shared example included by two fixture files at their own `it_behaves_like` lines (no collapse), a shared example inside a tagged context carries the context's tags, malformed slug/sha/run_id refused with no file written, and a pre-existing `tmp/traceability.json` left byte-identical; show red
+- [ ] 1.4 Write `spec/bin/repo_trace_merge_spec.rb` (subprocess): merge of three disjoint traces; mismatch of schema, repo, sha or run_id (including null against non-null) with no output file; duplicated result; later `recorded_at` kept; unknown keys and bad status/source/patterns rejected with no output file; show red
+- [ ] 1.5 Write `spec/ci_workflow_spec.rb`: every `ci.yml` scenario in the delta (`rspec` command and artifact; `drivers` matrix, permissions, `fail-fast`, stage `base_url` read from config with no URL literal; `cli` step order with every `GH_TOKEN` step before `fetch` and none after; per-leg command, trace path and artifact; `trace` needs, `!cancelled()`, conditions, downloads, upload retention and final failing step; `notify-docs`; gate; top-level permissions; no `${{` in `run:` of `trace`/`notify-docs`; concurrency); show red
+- [ ] 1.6 Write `spec/record_workflow_spec.rb`: the `record.yml` scenarios in the delta (`environments` output and its one-liner; `notify-docs` needs, `if`, `permissions: {}`, `fail-fast: false`, matrix, payload from `env`; own token and no `LEDGER_APP` reference; `publish` has no dispatch step or `DISPATCH_APP` reference and still mints only the ledger-writer token); show red
+- [ ] 1.7 Write `spec/support/tag_only_diff_spec.rb` and `spec/fixtures/tag_only/<case>/{before,after}.rb`: tags added (allowed), assertion changed (fails), tagged context wrapper added (allowed), wrapper that also changes a line inside (fails), any other file change such as `spec/spec_helper.rb` (fails); show red
+- [ ] 1.8 Tag the existing examples with `requirement:`/`scenario:` (only metadata or tagged wrapper contexts around unchanged lines): the groups of `spec/drivers/greeter_driver_contract.rb` (per the contract tagging decision), wrapping each `it_behaves_like` in `cli_driver_spec.rb` and `http_driver_spec.rb` in a tagged context where one pair suffices, and examples in `spec/gate_verdict_spec.rb`, `ledger_renderer_spec.rb`, `ledger_spec.rb`, `run_record_spec.rb`, `observed_driver_spec.rb`, `environments_spec.rb`, `event_validation_spec.rb`, `resolver_spec.rb`, `deployed_spec.rb`, `publisher_spec.rb`, `publisher_guards_spec.rb`, `cli_release_spec.rb` and `composition_root_spec.rb` where they verify a requirement. Map each example to the heading it verifies; leave unrelated examples untagged. Cover every requirement in `driver-contract`, `traceability`, `ledger-publication`, `acceptance-gate` and `environment-targets`. Tag the new specs per the delta
+- [ ] 1.9 Add the commented, file-scoped RuboCop exclusions the new tooling specs need to `.rubocop.yml` (as in greeter-core: `RSpec/DescribeClass`, `RSpec/ExampleLength`, `RSpec/MultipleMemoizedHelpers`, `RSpec/SpecFilePathSuffix` for `spec/fixtures/**/*`, `RSpec/ContextWording` for wrapper contexts)
+- [ ] 1.10 Commit as `test(adopt-live-docs): ...` with the failing output
+
+## 2. Implementation
+
+- [ ] 2.1 Add `openspec/requirement-tags.yml` with the five greeting entries from design.md; do not touch any `@requirement-*` tag in `features/`
+- [ ] 2.2 `spec/support/slug.rb` (`RepoTrace::Slug`)
+- [ ] 2.3 `spec/support/trace_check.rb` (`RepoTrace::Check`) with `change_glob:`, `exclude_glob:`, `feature_glob:` and `tag_map:`
+- [ ] 2.4 `spec/support/repo_trace/document.rb` and `spec/support/repo_trace_formatter.rb`, copied from greeter-cli and adapted (`repo` is `greeter-acceptance`; inclusion-line location for shared examples, re-checking greeter-cli's rule; never read or write `tmp/traceability.json`). `spec/spec_helper.rb` already loads `spec/support/**`, so it and `.rspec` need no edit
+- [ ] 2.5 `bin/merge-repo-trace` copied from greeter-cli and extended to N inputs (executable bit, frozen string literal, stdlib only)
+- [ ] 2.6 `spec/support/tag_only_diff.rb` (`RepoTrace::TagOnlyDiff`)
+- [ ] 2.7 `ci.yml`: schedule, top-level permissions, concurrency, `rspec`, `drivers` (http stage `base_url` from `config/environments.yml`; cli lookup then the record.yml sequence with tokens only before `fetch`), `trace`, `notify-docs`; update the diagram comment
+- [ ] 2.8 `record.yml`: `environments` output on `resolve`; `notify-docs` after `publish` (`needs: [resolve, publish]`, `if: always() && needs.publish.result == 'success'`, `permissions: {}`, `fail-fast: false`, matrix over `environments`, `greeterhq-dispatch` token, one dispatch per environment); leave `publish` unedited
+- [ ] 2.9 Update `.talismanrc` checksums for edited tracked files (including both workflows and `.rubocop.yml`)
+
+## 3. Verify and docs
+
+- [ ] 3.1 `bundle exec rspec --exclude-pattern 'spec/drivers/**/*_spec.rb'`; with `GREETER_CLI_CMD` or `GREETER_BASE_URL` set, run each driver spec with `--format RepoTraceFormatter`; run `bin/merge-repo-trace` on the three outputs and inspect `tmp/repo-trace.json` (every tooling requirement present, cli and http results at their own locations, no descriptions); confirm `tmp/traceability.json` is unchanged by a Cucumber run
+- [ ] 3.2 `bundle exec rubocop` (including `bin/merge-repo-trace`)
+- [ ] 3.3 Tag-only check on modified spec files (must print nothing): for each file from `git diff main --name-only --diff-filter=M -- spec ':!spec/support' ':!spec/fixtures'`, run `RepoTrace::TagOnlyDiff` against `git show main:<file>`
+- [ ] 3.4 Confirm `git diff main -- lib features` is empty (no suite code change, so no new suite tag)
+- [ ] 3.5 `openspec validate adopt-live-docs --strict`, then after archive `openspec validate --all --strict`
+- [ ] 3.6 Maintainer confirms: the `greeterhq-dispatch` app grants only contents write on greeter-docs and is installed there; `vars.DISPATCH_APP_CLIENT_ID` and `secrets.DISPATCH_APP_PRIVATE_KEY` exist; `github.token` can read the latest greeter-cli release; the greeter-docs consumer change allowlists `client_payload[repo]` and `[ledger]` and validates the trace schema
+- [ ] 3.7 README note on the `repo-trace` artifact, the driver jobs and the `docs-refresh` dispatches; no CHANGELOG entry

@@ -73,6 +73,14 @@ fileignoreconfig:
   checksum: f74747f71ff593cf0c2afa4098aaf1eb3630654a9b8e979a851574add4d23131
 - filename: lib/greeter_acceptance/run_record.rb
   checksum: 1214970e365c8f44cea9495dace57892b27b86deee08426b6c5591dc2b807ca5
+- filename: openspec/changes/adopt-live-docs/proposal.md
+  checksum: 7e5b3238dc46b9ced6350861098dee619f68fe8f327af5cc7710134c00b5d4ab
+- filename: openspec/changes/adopt-live-docs/specs/live-docs-traceability/spec.md
+  checksum: 8b473c5c39c36a35d0f77348cb8edb50b3d2d84f8a0a21ee2bd904ad3a29bfe2
+- filename: openspec/changes/adopt-live-docs/tasks.md
+  checksum: f487ced7a4e14915ea7d4c855516a35b14c76fcecfb2112ac4056a2fda107e3e
+- filename: openspec/changes/adopt-live-docs/design.md
+  checksum: 0d3137fcaf84647115c2aa16f103f48e0bfe852d8c4832306683e2487b7508c3 
 - filename: openspec/specs/driver-contract/spec.md
   checksum: a56be723169ab5ce5111c66ca382797c0191514bc45044c613bd47e42cbf2745
 - filename: openspec/specs/traceability/spec.md
