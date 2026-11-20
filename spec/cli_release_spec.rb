@@ -193,7 +193,10 @@ RSpec.describe 'CliRelease.ruby_version' do
     let(:launcher) { File.join(dir, 'launcher') }
     let(:lockfile) { File.join(dir, 'Gemfile.lock') }
     let(:bundler_env) do
-      { 'BUNDLE_GEMFILE' => nil, 'BUNDLE_PATH' => nil, 'BUNDLE_BIN' => nil, 'BUNDLE_FROZEN' => nil, 'RUBYOPT' => nil }
+      # Under `bundle exec`, Bundler 4 sets BUNDLE_LOCKFILE to this repo's lockfile;
+      # without clearing it, `bundle lock` would overwrite that file.
+      { 'BUNDLE_GEMFILE' => nil, 'BUNDLE_LOCKFILE' => nil, 'BUNDLE_PATH' => nil, 'BUNDLE_BIN' => nil,
+        'BUNDLE_FROZEN' => nil, 'RUBYOPT' => nil }
     end
 
     def lock_gemfile

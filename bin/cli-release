@@ -46,7 +46,8 @@ module CliRelease
   # BUNDLE_FROZEN makes the candidate's own Gemfile.lock authoritative: a missing
   # or stale lockfile is refused instead of being re-resolved.
   CLEAN_ENV = {
-    'BUNDLE_GEMFILE' => nil, 'BUNDLE_PATH' => nil, 'BUNDLE_BIN' => nil, 'RUBYOPT' => nil, 'BUNDLE_FROZEN' => 'true'
+    'BUNDLE_GEMFILE' => nil, 'BUNDLE_LOCKFILE' => nil, 'BUNDLE_PATH' => nil, 'BUNDLE_BIN' => nil,
+    'RUBYOPT' => nil, 'BUNDLE_FROZEN' => 'true'
   }.freeze
 
   module_function
