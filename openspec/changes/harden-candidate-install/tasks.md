@@ -44,10 +44,10 @@ Notes for whoever applies this change:
 
 ## 2. Frozen install and step order
 
-- [ ] 2.1 Add `'BUNDLE_FROZEN' => 'true'` to `CliRelease::CLEAN_ENV`, and add the
+- [x] 2.1 Add `'BUNDLE_FROZEN' => 'true'` to `CliRelease::CLEAN_ENV`, and add the
   reason to `install`'s failure message. Verify the 1.1 examples pass and
   RuboCop is clean.
-- [ ] 2.2 In `record.yml`'s run job, move "Look up when the release was
+- [x] 2.2 In `record.yml`'s run job, move "Look up when the release was
   published" to just before "Fetch the release (checksum and tag checked)",
   with its `if`, `continue-on-error`, `env` and outputs unchanged. Update its
   comment to say why it runs first. Verify:
@@ -58,31 +58,31 @@ Notes for whoever applies this change:
 
 ## 3. Version and docs
 
-- [ ] 3.1 Set `GreeterAcceptance::VERSION` to `'0.3.0'`. Verify `ruby -Ilib
+- [x] 3.1 Set `GreeterAcceptance::VERSION` to `'0.3.0'`. Verify `ruby -Ilib
   -rgreeter_acceptance/version -e 'puts GreeterAcceptance::VERSION'` prints
   `0.3.0`.
-- [ ] 3.2 In the README's gate and record sections, say that an artifact
+- [x] 3.2 In the README's gate and record sections, say that an artifact
   channel must ship a `Gemfile.lock` that matches its Gemfile and is installed
   frozen, and what a refusal looks like. Verify every YAML snippet in the
   README still parses.
 
 ## 4. Verify and docs
 
-- [ ] 4.1 Run the tooling specs with `bundle exec rspec`, and the driver contract
+- [x] 4.1 Run the tooling specs with `bundle exec rspec`, and the driver contract
   with `GREETER_CHANNEL=cli` (real greeter-cli launcher) and `GREETER_CHANNEL=http`
   (stage endpoint). Verify everything passes.
-- [ ] 4.2 Run `GREETER_CHANNEL=cli bundle exec cucumber` and
+- [x] 4.2 Run `GREETER_CHANNEL=cli bundle exec cucumber` and
   `GREETER_CHANNEL=http bundle exec cucumber`. Check each `tmp/traceability.json`
   against `docs/traceability-schema.md`. Verify the results match the previous
   release.
-- [ ] 4.3 Run `bin/cli-release fetch` greeter-cli v0.1.12 (the version on both
+- [x] 4.3 Run `bin/cli-release fetch` greeter-cli v0.1.12 (the version on both
   ledgers), then `bin/cli-release install` on it, under Ruby 3.3.5. Verify the
   frozen install succeeds and the launcher prints
   `greeter-cli 0.1.12 (greeter-core 0.1.3)`, which shows the shipped lockfile
   matches.
-- [ ] 4.4 Confirm the files that must not change are unchanged. Verify
+- [x] 4.4 Confirm the files that must not change are unchanged. Verify
   `git diff main -- features .github/workflows/gate.yml` is empty.
-- [ ] 4.5 Run RuboCop, check `frozen_string_literal` on every Ruby file, and run
+- [x] 4.5 Run RuboCop, check `frozen_string_literal` on every Ruby file, and run
   `openspec validate harden-candidate-install --strict` and
   `openspec validate --all --strict`. Verify all pass.
 

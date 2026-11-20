@@ -217,6 +217,14 @@ bin/cli-release: unsupported ruby requirement in Gemfile: ruby '< 4'
 A Gemfile that is a link or a special file, is over 64 KiB, or is not UTF-8 is
 refused the same way, with the reason instead of the line.
 
+An artifact channel must also ship a `Gemfile.lock` that matches its Gemfile. The
+candidate is installed frozen, exactly as the lockfile pins it, and is never
+re-resolved. A missing or stale lockfile fails the job at the install step:
+
+```text
+bin/cli-release: bundle install failed in <dir> (the Gemfile.lock must be present and match the Gemfile)
+```
+
 ### Record: after a release
 
 `record.yml` runs the suite against what is deployed and records the result on a
@@ -251,6 +259,12 @@ Other triggers:
   rollback. The ledger records who forced it.
 
 Without `force`, an older version than the recorded one is refused.
+
+Record mode installs an artifact channel the same way as the gate: under the Ruby
+its Gemfile declares, frozen to its `Gemfile.lock`. A release without a matching
+lockfile fails the run and records the deployment with no result. The step that
+reads the release's publish time (the only one that uses a token) runs before the
+release is fetched, so no release code runs ahead of it.
 
 ## Adding a channel
 
