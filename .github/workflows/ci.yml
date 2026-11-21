@@ -1,12 +1,25 @@
 # .github/workflows/ci.yml
 #
 # Staged pipeline: lint runs first (cheap gate, fails fast); once it is green
-# the spec-gate runs. Arrows are `needs:` edges:
+# the spec-gate, the RSpec suite and the driver contract run. Arrows are
+# `needs:` edges:
 #
-#   lint ──── spec-gate
+#   lint ──┬── spec-gate
+#          ├── rspec ────┐
+#          └── drivers ──┴── trace ── notify-docs
 #
-#   lint        – RuboCop. Runs first; nothing else starts until it is green.
-#   spec-gate   – openspec validate.         needs: lint
+#   lint         – RuboCop. Runs first; nothing else starts until it is green.
+#   spec-gate    – openspec validate.                         needs: lint
+#   rspec        – the RSpec suite without the driver specs,  needs: lint
+#                  writing a partial repo trace.
+#   drivers      – the driver contract against real channels, needs: lint
+#                  one leg per channel (cli: the latest greeter-cli release;
+#                  http: the stage target from config/environments.yml), each
+#                  writing a partial repo trace.
+#   trace        – merges the partial traces. On main and the weekly schedule,
+#                  when every input job succeeded, uploads `repo-trace`.
+#   notify-docs  – on main and the weekly schedule, asks greeter-docs to
+#                  refresh (repository_dispatch docs-refresh).
 #
 # Ruby: CI tracks the latest 3.3.x patch (RUBY_VERSION below). Newer runner
 # images only build the latest patch of each series, so an exact patch pin would
@@ -22,11 +35,20 @@ name: CI
     tags: ["v*"]
   pull_request:
     branches: ["**"]
+  # Weekly, so greeter-docs sees current results even when nothing is pushed.
+  # This also calls the stage http target; that is accepted.
+  schedule:
+    - cron: "17 6 * * 1"
 
-# Cancel in-flight runs for the same ref so a fast-follow push doesn't queue.
+permissions:
+  contents: read
+
+# Pull-request runs for the same ref cancel each other, so a fast-follow push
+# doesn't queue. Runs on main and weekly runs are in separate groups (the event
+# name is part of the group) and are never cancelled.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   BUNDLE_JOBS: 4
@@ -85,3 +107,255 @@ jobs:
 
       - name: Validate all OpenSpec changes
         run: openspec validate --all --strict --json --no-interactive
+
+# ═════════════════════════════════════════════════════════════════════════════
+# rspec  (everything except the driver contract, which needs real channels)
+# ═════════════════════════════════════════════════════════════════════════════
+  rspec:
+    name: RSpec
+    runs-on: ubuntu-latest
+    needs: lint
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler: ${{ env.BUNDLER_VERSION }}
+          bundler-cache: true
+
+      - name: Run the suite without the driver specs
+        env:
+          REPO_TRACE_PATH: tmp/repo-trace-spec.json
+        run: >-
+          bundle exec rspec
+          --exclude-pattern 'spec/drivers/**/*_spec.rb'
+          --format progress --format RepoTraceFormatter
+
+      - name: Keep the partial trace
+        uses: actions/upload-artifact@v7
+        with:
+          name: repo-trace-spec
+          path: tmp/repo-trace-spec.json
+          retention-days: 1
+          if-no-files-found: error
+
+# ═════════════════════════════════════════════════════════════════════════════
+# drivers  (the driver contract against each real channel)
+# ═════════════════════════════════════════════════════════════════════════════
+  drivers:
+    name: Driver contract (${{ matrix.channel }})
+    # The artifact channel's Gemfile may declare a Ruby that newer runner images
+    # cannot install, so the job uses the same image as record mode.
+    runs-on: ubuntu-24.04
+    needs: lint
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [cli, http]
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up the suite's Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler: ${{ env.BUNDLER_VERSION }}
+          bundler-cache: true
+
+      # ── artifact channel ────────────────────────────────────────────────────
+      # The steps below follow record.yml's run job.
+      #
+      # The only step that sees a token. It reads the latest release and the
+      # commit its tag points at, and runs no downloaded code. It runs before the
+      # fetch, so no release code can have touched PATH or the runner's file
+      # commands by the time the token is used.
+      - name: Look up the latest greeter-cli release
+        if: matrix.channel == 'cli'
+        id: latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="$(gh release view --repo greeterhq/greeter-cli --json tagName --jq .tagName)"
+          sha="$(gh api "repos/greeterhq/greeter-cli/commits/${tag}" --jq .sha)"
+          { echo "version=${tag}"; echo "sha=${sha}"; } >> "$GITHUB_OUTPUT"
+
+      - name: Fetch the release (checksum and tag checked)
+        if: matrix.channel == 'cli'
+        id: fetch
+        env:
+          VERSION: ${{ steps.latest.outputs.version }}
+          SHA: ${{ steps.latest.outputs.sha }}
+        run: >-
+          echo "dir=$(ruby bin/cli-release fetch --repo greeterhq/greeter-cli
+          --version "$VERSION" --sha "$SHA" --out tmp/cli)" >> "$GITHUB_OUTPUT"
+
+      - name: Read the Ruby the release declares
+        if: matrix.channel == 'cli'
+        id: declared
+        env:
+          CLI_DIR: ${{ steps.fetch.outputs.dir }}
+        run: |
+          declared="$(ruby bin/cli-release ruby-version "$CLI_DIR")"
+          echo "ruby=${declared:-3.3}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up the Ruby the release declares
+        if: matrix.channel == 'cli'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ steps.declared.outputs.ruby }}
+
+      - name: Install the release and write its launcher
+        if: matrix.channel == 'cli'
+        id: launcher
+        env:
+          CLI_DIR: ${{ steps.fetch.outputs.dir }}
+        run: echo "path=$(ruby bin/cli-release install "$CLI_DIR" --launcher "$RUNNER_TEMP/greeter-launch")" >> "$GITHUB_OUTPUT"
+
+      - name: Go back to the suite's Ruby
+        if: matrix.channel == 'cli'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler: ${{ env.BUNDLER_VERSION }}
+          bundler-cache: true
+
+      # ── service channel ─────────────────────────────────────────────────────
+      # The stage target from the committed configuration, never from an input.
+      # Environments#resolve checks the host against its allowed pattern.
+      - name: Resolve the stage http target
+        if: matrix.channel == 'http'
+        run: |
+          base_url="$(ruby -Ilib -rgreeter_acceptance/environments -e '
+            puts GreeterAcceptance::Environments.load("config/environments.yml")
+                   .resolve(environment: "stage", channel: "http").base_url')"
+          echo "GREETER_BASE_URL=${base_url}" >> "$GITHUB_ENV"
+
+      # ── run ─────────────────────────────────────────────────────────────────
+      # The http driver's synthetic header stays on (its default).
+      - name: Run the driver contract
+        env:
+          CHANNEL: ${{ matrix.channel }}
+          GREETER_CHANNEL: ${{ matrix.channel }}
+          GREETER_CLI_CMD: ${{ steps.launcher.outputs.path }}
+        run: >-
+          REPO_TRACE_PATH="tmp/repo-trace-drivers-${CHANNEL}.json"
+          bundle exec rspec "spec/drivers/${CHANNEL}_driver_spec.rb"
+          --format progress --format RepoTraceFormatter
+
+      - name: Keep the partial trace
+        uses: actions/upload-artifact@v7
+        with:
+          name: repo-trace-drivers-${{ matrix.channel }}
+          path: tmp/repo-trace-drivers-${{ matrix.channel }}.json
+          retention-days: 1
+          if-no-files-found: error
+
+# ═════════════════════════════════════════════════════════════════════════════
+# trace  (merge the partial traces; publish on main and weekly)
+# ═════════════════════════════════════════════════════════════════════════════
+  trace:
+    name: Repo trace
+    runs-on: ubuntu-latest
+    needs: [rspec, drivers]
+    # Runs after a failed input job too, so that the failure is reported here
+    # (the last step) rather than the job being skipped silently.
+    if: ${{ !cancelled() }}
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      # Standard-library Ruby only: no bundler, no gems.
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+
+      # Artifacts from this run only, by name, each in its own directory.
+      - name: Download the RSpec trace
+        if: needs.rspec.result == 'success' && needs.drivers.result == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          name: repo-trace-spec
+          path: tmp/traces/spec
+
+      - name: Download the cli driver trace
+        if: needs.rspec.result == 'success' && needs.drivers.result == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          name: repo-trace-drivers-cli
+          path: tmp/traces/cli
+
+      - name: Download the http driver trace
+        if: needs.rspec.result == 'success' && needs.drivers.result == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          name: repo-trace-drivers-http
+          path: tmp/traces/http
+
+      - name: Merge the traces
+        if: needs.rspec.result == 'success' && needs.drivers.result == 'success'
+        run: >-
+          ruby bin/merge-repo-trace tmp/repo-trace.json
+          tmp/traces/spec/repo-trace-spec.json
+          tmp/traces/cli/repo-trace-drivers-cli.json
+          tmp/traces/http/repo-trace-drivers-http.json
+
+      - name: Publish the merged trace
+        if: >-
+          needs.rspec.result == 'success' && needs.drivers.result == 'success' &&
+          (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+        uses: actions/upload-artifact@v7
+        with:
+          name: repo-trace
+          path: tmp/repo-trace.json
+          retention-days: 90
+          if-no-files-found: error
+
+      # A red input job makes this job red too, so notify-docs does not run.
+      - name: Fail when an input job did not succeed
+        if: needs.rspec.result != 'success' || needs.drivers.result != 'success'
+        run: exit 1
+
+# ═════════════════════════════════════════════════════════════════════════════
+# notify-docs  (ask greeter-docs to refresh; main and weekly only)
+# ═════════════════════════════════════════════════════════════════════════════
+  notify-docs:
+    name: Notify greeter-docs
+    runs-on: ubuntu-latest
+    needs: trace
+    if: github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    permissions: {}
+
+    steps:
+      - name: Mint the greeterhq-dispatch token
+        id: dispatch-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.DISPATCH_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DISPATCH_APP_PRIVATE_KEY }}
+          owner: greeterhq
+          repositories: greeter-docs
+          permission-contents: write
+
+      - name: Send docs-refresh
+        env:
+          GH_TOKEN: ${{ steps.dispatch-token.outputs.token }}
+        run: >-
+          gh api repos/greeterhq/greeter-docs/dispatches
+          -f event_type=docs-refresh
+          -f 'client_payload[repo]=greeter-acceptance'

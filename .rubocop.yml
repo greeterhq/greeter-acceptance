@@ -75,3 +75,17 @@ RSpec/ExpectActual:
 RSpec/IdenticalEqualityAssertion:
   Exclude:
     - 'spec/fixtures/**/*'
+
+# The trace-check fixtures are tag lists: empty example bodies, never run. The
+# tagged context wrappers in fixtures are named after a requirement, not "when".
+Lint/EmptyBlock:
+  Exclude:
+    - 'spec/fixtures/trace_check/**/*'
+
+RSpec/NoExpectationExample:
+  Exclude:
+    - 'spec/fixtures/trace_check/**/*'
+
+RSpec/ContextWording:
+  Exclude:
+    - 'spec/fixtures/**/*'

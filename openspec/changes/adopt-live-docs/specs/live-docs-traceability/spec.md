@@ -113,8 +113,9 @@ that the same contract included by two driver specs gives distinct locations.
 ### Requirement: Per-job traces merge into one trace
 `bin/merge-repo-trace` SHALL merge any number of trace files into one
 `greeterhq.repo-trace.v1` file containing every result. It SHALL fail, writing
-nothing, when the inputs differ in `schema`, `repo`, `sha` or `run_id`, when an input
-is outside the v1 shape, or when the same result appears in two inputs.
+nothing, when the inputs differ in `sha` or `run_id`, when an input is outside the v1
+shape (including a `schema` other than `greeterhq.repo-trace.v1` or a `repo` other
+than `greeter-acceptance`), or when the same result appears in two inputs.
 
 #### Scenario: Merge combines all traces
 - **WHEN** three valid trace files with the same schema, repo, sha and run_id and disjoint results are merged
@@ -122,12 +123,12 @@ is outside the v1 shape, or when the same result appears in two inputs.
 - Maps to: `spec/bin/repo_trace_merge_spec.rb`
 
 #### Scenario: Merge rejects mismatched inputs
-- **WHEN** any two files differ in `schema`, `repo`, `sha` or `run_id` (including `null` against a value)
+- **WHEN** any two files differ in `sha` or `run_id` (including `null` against a value)
 - **THEN** the merge exits non-zero with a message naming the differing field and writes no output file
 - Maps to: `spec/bin/repo_trace_merge_spec.rb`
 
 #### Scenario: Merge rejects inputs outside the v1 shape
-- **WHEN** an input has an unknown top-level key, a result with an extra key, a `status` outside `passed|failed|pending|skipped`, a `source` other than `rspec`, or a value that does not match its pattern
+- **WHEN** an input has a `schema` other than `greeterhq.repo-trace.v1`, a `repo` other than `greeter-acceptance`, an unknown top-level key, a result with an extra key, a `status` outside `passed|failed|pending|skipped`, a `source` other than `rspec`, or a value that does not match its pattern
 - **THEN** the merge exits non-zero naming the file and field and writes no output file
 - Maps to: `spec/bin/repo_trace_merge_spec.rb`
 

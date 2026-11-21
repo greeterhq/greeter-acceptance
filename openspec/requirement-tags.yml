@@ -1,0 +1,12 @@
+# Maps each heading slug of the `greeting` capability to the Cucumber tag that
+# verifies it. The tag is the suffix of `@requirement-<tag>` in features/. These
+# tags are the ledger's requirement keys, so they are not renamed.
+#
+# The trace check reads this file: a requirement listed here is verified by a
+# Cucumber scenario carrying its tag, not by an RSpec example. Every key must be
+# a requirement heading slug in openspec/specs/greeting/spec.md.
+a-channel-greets-a-valid-guest: greeting-happy
+a-channel-rejects-an-invalid-name: greeting-invalid
+a-counting-channel-records-the-greeting-count: greeting-count
+a-counting-channel-increments-the-count-for-a-returning-guest: greeting-returning
+an-idempotent-replay-does-not-double-count: greeting-idempotent

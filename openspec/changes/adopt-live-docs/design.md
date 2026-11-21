@@ -24,12 +24,12 @@ Observed in this repo:
 ## Decisions
 
 ### Slug helper and tags (as in greeter-core)
-`spec/support/slug.rb` defines `RepoTrace::Slug.call(text)`:
+`spec/support/repo_trace/slug.rb` defines `RepoTrace::Slug.call(text)`:
 `text.downcase.gsub(/[^a-z0-9]+/, '-').gsub(/\A-+|-+\z/, '')`. `slug_spec.rb`
 asserts a hand-written table plus a hand-written slug for every real requirement and
 scenario heading in `openspec/specs/**` and in this change's delta (not computed
 with the function under test). Tagging, the tag-only diff check
-(`spec/support/tag_only_diff.rb`, tagged context wrappers around unchanged
+(`spec/support/repo_trace/tag_only_diff.rb`, tagged context wrappers around unchanged
 `it_behaves_like` lines) and the file-scoped RuboCop exclusions are done as in
 greeter-core. Tag-only rules here: allowed changes in existing files are tag pairs,
 whitespace and tagged context wrappers; `spec/spec_helper.rb` is not edited.
@@ -107,8 +107,9 @@ runs through an argument array. Differences:
 ### Merge script
 `bin/merge-repo-trace OUT IN...` is copied from greeter-cli (with `spec/support/repo_trace/document.rb`,
 which it requires) and extended from two inputs to one or more (at least two in CI). Same checks:
-every input fully validated before comparing; `schema`, `repo`, `sha` and `run_id` must be equal across
-all inputs (`null` equals only `null`); no `(requirement, scenario, location)` duplicated across inputs; the
+every input fully validated before comparing; validation fixes `schema` (`greeterhq.repo-trace.v1`) and
+`repo` (`greeter-acceptance`), so valid inputs cannot differ in them and only `sha` and `run_id` are compared
+across inputs (`null` equals only `null`); no `(requirement, scenario, location)` duplicated across inputs; the
 later `recorded_at`; results sorted; nothing written on any error; messages never echo input values. The
 repo name in `document.rb` becomes `greeter-acceptance`. Standard library only, `# frozen_string_literal: true`,
 run in CI without a bundle. It is not part of any gem (this repo has none), and `lib/` is untouched.
@@ -152,7 +153,9 @@ context as the shared rules say. Tags never change an assertion, name or body.
     `ruby/setup-ruby` for that Ruby, `bin/cli-release install --launcher`, then `ruby/setup-ruby` for the suite's Ruby.
     Only the lookup step carries `GH_TOKEN` (`github.token`), and it runs before `fetch`; no step after `fetch` has a token
     (record.yml's later "published at" lookup is not copied). The tag and sha are passed through `env`/step outputs,
-    never interpolated into `run:`.
+    never interpolated into `run:`. As in record.yml, the suite's Ruby is set up first (for both legs), so `fetch` and
+    `ruby-version` never depend on the runner image's Ruby; the cli leg then sets up the Ruby the release
+    declares for the install and goes back to the suite's Ruby before the driver spec runs.
   - Each leg: `GREETER_CHANNEL`, then
     `REPO_TRACE_PATH=tmp/repo-trace-drivers-<channel>.json bundle exec rspec spec/drivers/<channel>_driver_spec.rb --format progress --format RepoTraceFormatter`
     (`<channel>` through `env`), then upload `repo-trace-drivers-<channel>` with `retention-days: 1`, `if-no-files-found: error`.

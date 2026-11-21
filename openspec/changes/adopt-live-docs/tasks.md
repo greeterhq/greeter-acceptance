@@ -25,24 +25,25 @@ Edits under `spec/` need `touch tmp/allow-test-edits` (see `bin/guard-test-edits
 
 ## 2. Implementation
 
-- [ ] 2.1 Add `openspec/requirement-tags.yml` with the five greeting entries from design.md; do not touch any `@requirement-*` tag in `features/`
-- [ ] 2.2 `spec/support/slug.rb` (`RepoTrace::Slug`)
-- [ ] 2.3 `spec/support/trace_check.rb` (`RepoTrace::Check`) with `change_glob:`, `exclude_glob:`, `feature_glob:` and `tag_map:`
-- [ ] 2.4 `spec/support/repo_trace/document.rb` and `spec/support/repo_trace_formatter.rb`, copied from greeter-cli and adapted (`repo` is `greeter-acceptance`; inclusion-line location for shared examples, re-checking greeter-cli's rule; never read or write `tmp/traceability.json`). `spec/spec_helper.rb` already loads `spec/support/**`, so it and `.rspec` need no edit
-- [ ] 2.5 `bin/merge-repo-trace` copied from greeter-cli and extended to N inputs (executable bit, frozen string literal, stdlib only)
-- [ ] 2.6 `spec/support/tag_only_diff.rb` (`RepoTrace::TagOnlyDiff`)
-- [ ] 2.7 `ci.yml`: schedule, top-level permissions, concurrency, `rspec`, `drivers` (http stage `base_url` from `config/environments.yml`; cli lookup then the record.yml sequence with tokens only before `fetch`), `trace`, `notify-docs`; update the diagram comment
-- [ ] 2.8 `record.yml`: `environments` output on `resolve`; `notify-docs` after `publish` (`needs: [resolve, publish]`, `if: always() && needs.publish.result == 'success'`, `permissions: {}`, `fail-fast: false`, matrix over `environments`, `greeterhq-dispatch` token, one dispatch per environment); leave `publish` unedited
-- [ ] 2.9 Update `.talismanrc` checksums for edited tracked files (including both workflows and `.rubocop.yml`)
+- [x] 2.1 Add `openspec/requirement-tags.yml` with the five greeting entries from design.md; do not touch any `@requirement-*` tag in `features/`
+- [x] 2.2 `spec/support/repo_trace/slug.rb` (`RepoTrace::Slug`)
+- [x] 2.3 `spec/support/repo_trace/check.rb` (`RepoTrace::Check`) with `change_glob:`, `exclude_glob:`, `feature_glob:` and `tag_map:`
+- [x] 2.4 `spec/support/repo_trace/document.rb` and `spec/support/repo_trace_formatter.rb`, copied from greeter-cli and adapted (`repo` is `greeter-acceptance`; inclusion-line location for shared examples, re-checking greeter-cli's rule; never read or write `tmp/traceability.json`). `spec/spec_helper.rb` already loads `spec/support/**`, so it and `.rspec` need no edit
+- [x] 2.5 `bin/merge-repo-trace` copied from greeter-cli and extended to N inputs (executable bit, frozen string literal, stdlib only)
+- [x] 2.6 `spec/support/repo_trace/tag_only_diff.rb` (`RepoTrace::TagOnlyDiff`)
+- [x] 2.7 `ci.yml`: schedule, top-level permissions, concurrency, `rspec`, `drivers` (http stage `base_url` from `config/environments.yml`; cli lookup then the record.yml sequence with tokens only before `fetch`), `trace`, `notify-docs`; update the diagram comment
+- [x] 2.8 `record.yml`: `environments` output on `resolve`; `notify-docs` after `publish` (`needs: [resolve, publish]`, `if: always() && needs.publish.result == 'success'`, `permissions: {}`, `fail-fast: false`, matrix over `environments`, `greeterhq-dispatch` token, one dispatch per environment); leave `publish` unedited
+- [x] 2.9 Update `.talismanrc` checksums for edited tracked files (including both workflows and `.rubocop.yml`)
 
 ## 3. Verify and docs
 
-- [ ] 3.1 `bundle exec rspec --exclude-pattern 'spec/drivers/**/*_spec.rb'`; with `GREETER_CLI_CMD` or `GREETER_BASE_URL` set, run each driver spec with `--format RepoTraceFormatter`; run `bin/merge-repo-trace` on the three outputs and inspect `tmp/repo-trace.json` (every tooling requirement present, cli and http results at their own locations, no descriptions); confirm `tmp/traceability.json` is unchanged by a Cucumber run
-- [ ] 3.2 `bundle exec rubocop` (including `bin/merge-repo-trace`)
-- [ ] 3.3 Tag-only check on modified spec files (must print nothing): for each file from `git diff main --name-only --diff-filter=M -- spec ':!spec/support' ':!spec/fixtures'`, run `RepoTrace::TagOnlyDiff` against `git show main:<file>`
+- [x] 3.1 `bundle exec rspec --exclude-pattern 'spec/drivers/**/*_spec.rb'`; with `GREETER_CLI_CMD` or `GREETER_BASE_URL` set, run each driver spec with `--format RepoTraceFormatter`; run `bin/merge-repo-trace` on the three outputs and inspect `tmp/repo-trace.json` (every tooling requirement present, cli and http results at their own locations, no descriptions); confirm `tmp/traceability.json` is unchanged by a Cucumber run
+- [x] 3.2 `bundle exec rubocop` (including `bin/merge-repo-trace`)
+- [x] 3.3 Tag-only check on modified spec files (must print nothing): for each file from `git diff main --name-only --diff-filter=M -- spec ':!spec/support' ':!spec/fixtures'`, run `RepoTrace::TagOnlyDiff` against `git show main:<file>`
   Two files are not pure tag-only edits and are expected to be reported by the check, each for a stated reason:
   `spec/workflow_token_order_spec.rb` (per-file `describe`s replace a loop so each file carries its own tag; `bundle exec rspec --dry-run` on the `HEAD` version and on the new one both list the same 5 examples, and both pass) and `spec/cli_release_spec.rb` (the three install examples moved into a shared example group included under two requirements; assertions unchanged).
-- [ ] 3.4 Confirm `git diff main -- lib features` is empty (no suite code change, so no new suite tag)
+- [x] 3.4 Confirm `git diff main -- lib features` is empty (no suite code change, so no new suite tag)
 - [ ] 3.5 `openspec validate adopt-live-docs --strict`, then after archive `openspec validate --all --strict`
 - [ ] 3.6 Maintainer confirms: the `greeterhq-dispatch` app grants only contents write on greeter-docs and is installed there; `vars.DISPATCH_APP_CLIENT_ID` and `secrets.DISPATCH_APP_PRIVATE_KEY` exist; `github.token` can read the latest greeter-cli release; the greeter-docs consumer change allowlists `client_payload[repo]` and `[ledger]` and validates the trace schema
-- [ ] 3.7 README note on the `repo-trace` artifact, the driver jobs and the `docs-refresh` dispatches; no CHANGELOG entry
+  Status (2026-11-21): app installed on greeter-docs with contents read and write (met). `DISPATCH_APP_CLIENT_ID` and `DISPATCH_APP_PRIVATE_KEY` do not exist in greeter-acceptance (open; `notify-docs` fails until they do). greeter-cli is public and its latest release reads without a token (met). greeter-docs has no workflows and no file mentioning `docs-refresh`, `client_payload` or `repo-trace` on `main` (open; the consumer change is not written yet).
+- [x] 3.7 README note on the `repo-trace` artifact, the driver jobs and the `docs-refresh` dispatches; no CHANGELOG entry

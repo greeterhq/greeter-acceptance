@@ -1,6 +1,8 @@
 fileignoreconfig:
+- filename: .github/workflows/ci.yml
+  checksum: e66f70b5ae6f2e6d1fbd4b6191b06adcefbeae96f018a7cac5880630cd63ba13
 - filename: .github/workflows/record.yml
-  checksum: 8125567f6fa30802d5570966ab113f6ac9b1850d0b1c7feb4f8e2a8ee435ff9e
+  checksum: df262a92232d5d26d7e06379c22fd9caeb437ee4efa7b0acc5526066017f07b1
 - filename: .kiro/prompts/opsx-apply.prompt.md
   checksum: dd096f50b0520f9b64cb3dfebaa7a4940a5369da8b505bb22c6166991198ce79
 - filename: .kiro/skills/openspec-apply-change/SKILL.md
@@ -53,6 +55,8 @@ fileignoreconfig:
   checksum: 6836a3d8ef213bfaed8c8df6bcb30b1819add5d807c3bed7c31410e05d5c5f02
 - filename: bin/gate-verdict
   checksum: 196b086c5686f3282dd3ffc30c60d85515d1eaf29bf83a99de28c703252c3a0e
+- filename: bin/merge-repo-trace
+  checksum: d60131eb8fe1c56e2c2fc1a4a010c655798971a610b3dcc70ad72013b443541c
 - filename: bin/publish
   checksum: f878f4bf62f784fdb45eddbffbbbfe59c08db1037063b62be3f2b62cbae567d3
 - filename: config/environments.yml
@@ -76,11 +80,13 @@ fileignoreconfig:
 - filename: openspec/changes/adopt-live-docs/proposal.md
   checksum: 7e5b3238dc46b9ced6350861098dee619f68fe8f327af5cc7710134c00b5d4ab
 - filename: openspec/changes/adopt-live-docs/specs/live-docs-traceability/spec.md
-  checksum: 25a8687a78c5575dd9ebcba0da3ab86bf655dcd2795835d9b56f7c8be91ef23b
+  checksum: 79eb2b98f52242c62388927846073bd48df92e132184de1ef009b7706dd46d7c
 - filename: openspec/changes/adopt-live-docs/tasks.md
-  checksum: d64114cc75bc667999e7c5abfffd4a072a8111fd4d74d3ad6c89a90a207a60a7
+  checksum: 0f107e0c96e19476f0553a96e49b6e6c11c3e08aa86e790ea86666ccb1acf3bb
 - filename: openspec/changes/adopt-live-docs/design.md
-  checksum: 0d3137fcaf84647115c2aa16f103f48e0bfe852d8c4832306683e2487b7508c3 
+  checksum: 0d3137fcaf84647115c2aa16f103f48e0bfe852d8c4832306683e2487b7508c3
+- filename: openspec/requirement-tags.yml
+  checksum: 3fbf94c5eff3f59dc39444d78cb07e8b5670636c7bd110dc5e419eb915466dd5
 - filename: openspec/specs/driver-contract/spec.md
   checksum: a56be723169ab5ce5111c66ca382797c0191514bc45044c613bd47e42cbf2745
 - filename: openspec/specs/traceability/spec.md
@@ -88,7 +94,7 @@ fileignoreconfig:
 - filename: openspec/specs/greeting/spec.md
   checksum: a555470128358725aa291dee644a18d385ac227b1517ea9777c88b831de05b5a
 - filename: spec/bin/repo_trace_merge_spec.rb
-  checksum: 239418691fd174a7000eb6c3efe14d5d4813c9163c6e21c3aebe832da9a5efa1
+  checksum: 59e3a676c88a9cc642f565f6f13cf434e9bbb04e97d64ecfd6102675703129ee
 - filename: spec/ci_workflow_spec.rb
   checksum: aa4dd94b95cec5e542f8578cca1b82be685cb13a432f7b8d43572d3a8fa829f5
 - filename: spec/environments_spec.rb
@@ -109,6 +115,10 @@ fileignoreconfig:
   checksum: bb6bc53efe412b7553c1c4e26e4fac80c0b917310063da50e805b8aa1179cd32
 - filename: spec/support/ledger_fixtures.rb
   checksum: b77d6ea84f439b390085bee93e817e5dc4344c5c07905abdb3e81dfd7c773f68
+- filename: spec/support/repo_trace/document.rb
+  checksum: 1f9072fec7098b8a1f8e62226a3a3e405b950d7140eafde46d9097658db16606
+- filename: spec/support/repo_trace_formatter.rb
+  checksum: 49978c1e92fa43a8d95df26c4e6eeab71cf7cd6503712df6ccadaebebc81affd  
 - filename: spec/event_validation_spec.rb
   checksum: aa690b4c0cacd5d80a88ac0a4ceaad754abe45f61f154f2d02c0841eeef97704
 - filename: spec/publisher_spec.rb
