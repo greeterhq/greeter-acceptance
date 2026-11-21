@@ -71,13 +71,24 @@ RSpec.describe '.github/workflows/ci.yml' do
     it 'looks up the latest greeter-cli release, then follows the record.yml install sequence for the cli leg',
        requirement: 'ci-runs-the-driver-contract-against-real-channels',
        scenario: 'the-cli-leg-installs-the-latest-release-with-the-record-sequence' do
-      order = ['gh release view', 'bin/cli-release fetch', 'bin/cli-release ruby-version', 'ruby/setup-ruby',
-               'bin/cli-release install', 'ruby/setup-ruby'].map do |needle|
-        steps('drivers').index { |step| step['uses'].to_s.include?(needle) || step['run'].to_s.include?(needle) }
-      end
+      all = steps('drivers')
+      running = ->(needle) { all.index { |step| step['run'].to_s.include?(needle) } }
+      # Each setup-ruby step is told apart by the Ruby it installs, not by `uses`.
+      ruby_steps = ->(version) { all.each_index.select { |i| all[i].dig('with', 'ruby-version') == version } }
+      suite = ruby_steps.call('${{ env.RUBY_VERSION }}')
+      declared = ruby_steps.call('${{ steps.declared.outputs.ruby }}')
+      lookup = running.call('gh release view')
+      fetch = running.call('bin/cli-release fetch')
+      ruby_version = running.call('bin/cli-release ruby-version')
+      install = running.call('bin/cli-release install')
+      rspec = running.call('_driver_spec.rb')
 
-      expect(order).to eq(order.compact.sort)
-      expect(order.compact.size).to eq(6)
+      expect([lookup, fetch, ruby_version, install, rspec]).to all(be_an(Integer))
+      expect(declared.size).to eq(1)
+      expect(suite).to include(a_value < fetch)
+      expect([lookup, fetch, ruby_version]).to eq([lookup, fetch, ruby_version].sort)
+      expect(declared.first).to be_between(ruby_version + 1, install - 1)
+      expect(suite).to include(a_value_between(install + 1, rspec - 1))
       expect(steps('drivers').map { |s| s['run'].to_s }.join).to include('greeterhq/greeter-cli', 'gh api')
     end
 
@@ -86,7 +97,10 @@ RSpec.describe '.github/workflows/ci.yml' do
        scenario: 'the-cli-leg-installs-the-latest-release-with-the-record-sequence' do
       all = steps('drivers')
       fetch = all.index { |step| step['run'].to_s.include?('bin/cli-release fetch') }
-      holders = all.each_index.select { |i| text_of(all[i]).match?(/GH_TOKEN|github\.token|secrets\./) }
+      # The token-order rule from harden-candidate-install: nothing after the fetch
+      # references a secret, the job token or a minted token's output.
+      token = /GH_TOKEN|github\.token|secrets\.|steps\.[\w-]+\.outputs\.token/
+      holders = all.each_index.select { |i| text_of(all[i]).match?(token) }
 
       expect(fetch).not_to be_nil
       expect(holders).not_to be_empty

@@ -90,7 +90,7 @@ fileignoreconfig:
 - filename: spec/bin/repo_trace_merge_spec.rb
   checksum: 239418691fd174a7000eb6c3efe14d5d4813c9163c6e21c3aebe832da9a5efa1
 - filename: spec/ci_workflow_spec.rb
-  checksum: 6349a5c6cbd39bf0f608da455f4b7eb11379e4395407264ceb09606506bb8f9f
+  checksum: aa4dd94b95cec5e542f8578cca1b82be685cb13a432f7b8d43572d3a8fa829f5
 - filename: spec/environments_spec.rb
   checksum: b87b4f45b1848eedc8cb17b0a86673fa07fca14c85932819002110a2b4d7b644
 - filename: spec/fixtures/repo_trace/statuses.rb
