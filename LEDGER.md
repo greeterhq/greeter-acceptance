@@ -4,7 +4,7 @@ Suite v0.3.0
 
 | channel | state | channel version | core version | suite version | verification | recorded |
 | --- | --- | --- | --- | --- | --- | --- |
-| cli | current | v0.1.12 | 0.1.3 | v0.3.0 | verified | 2026-11-20, run #44723628558 |
+| cli | current | v0.1.12 | 0.1.3 | v0.3.0 | verified | 2026-11-21, run #44886860348 |
 | http | current | v0.5.22 | 0.1.3 | v0.3.0 | verified | 2026-11-20, run #44723628558 |
 
 | requirement | cli | http |
