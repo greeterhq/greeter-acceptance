@@ -21,7 +21,7 @@ Edits under `spec/` need `touch tmp/allow-test-edits` (see `bin/guard-test-edits
   - `spec/capability_gating_spec.rb` (new, with `spec/fixtures/capability_gating/` and `spec/fixtures/bin/fake_greeter`): runs `bundle exec cucumber` from a scratch copy of `lib/` and `features/support/`, against a fake CLI. Covers "A scenario is gated by its capability tags" (not applicable, steps do not run) and "Every capability tag names a known capability" (`@capability-countng`). Passes from the start. The example for an untagged scenario is not tagged to a scenario of the requirement: the cli channel has no capability, so "a channel with the capability" is not exercised.
   - `spec/cli_release_spec.rb`: the three frozen-install examples moved into `shared_examples 'a frozen candidate install'`, included once under the acceptance-gate requirement and once under the ledger-publication requirement (one scenario tag per context; assertions unchanged). Passes from the start.
 - [x] 1.9 Add the commented, file-scoped RuboCop exclusions the new tooling specs need to `.rubocop.yml` (as in greeter-core: `RSpec/DescribeClass`, `RSpec/ExampleLength`, `RSpec/MultipleMemoizedHelpers`, `RSpec/SpecFilePathSuffix` for `spec/fixtures/**/*`, `RSpec/ContextWording` for wrapper contexts)
-- [ ] 1.10 Commit as `test(adopt-live-docs): ...` with the failing output
+- [x] 1.10 Commit as `test(adopt-live-docs): ...` with the failing output (committed as `3726702`)
 
 ## 2. Implementation
 
@@ -43,7 +43,7 @@ Edits under `spec/` need `touch tmp/allow-test-edits` (see `bin/guard-test-edits
   Two files are not pure tag-only edits and are expected to be reported by the check, each for a stated reason:
   `spec/workflow_token_order_spec.rb` (per-file `describe`s replace a loop so each file carries its own tag; `bundle exec rspec --dry-run` on the `HEAD` version and on the new one both list the same 5 examples, and both pass) and `spec/cli_release_spec.rb` (the three install examples moved into a shared example group included under two requirements; assertions unchanged).
 - [x] 3.4 Confirm `git diff main -- lib features` is empty (no suite code change, so no new suite tag)
-- [ ] 3.5 `openspec validate adopt-live-docs --strict`, then after archive `openspec validate --all --strict`
+- [x] 3.5 `openspec validate adopt-live-docs --strict`, then after archive `openspec validate --all --strict`
 - [x] 3.6 Maintainer confirms: the `greeterhq-dispatch` app grants only contents write on greeter-docs and is installed there; `vars.DISPATCH_APP_CLIENT_ID` and `secrets.DISPATCH_APP_PRIVATE_KEY` exist; `github.token` can read the latest greeter-cli release; the greeter-docs consumer change allowlists `client_payload[repo]` and `[ledger]` and validates the trace schema
   Done: credentials added at repository level; the greeter-docs consumer is delivered by add-live-docs in greeter-docs (the next change).
 - [x] 3.7 README note on the `repo-trace` artifact, the driver jobs and the `docs-refresh` dispatches; no CHANGELOG entry

@@ -77,14 +77,6 @@ fileignoreconfig:
   checksum: f74747f71ff593cf0c2afa4098aaf1eb3630654a9b8e979a851574add4d23131
 - filename: lib/greeter_acceptance/run_record.rb
   checksum: 1214970e365c8f44cea9495dace57892b27b86deee08426b6c5591dc2b807ca5
-- filename: openspec/changes/adopt-live-docs/proposal.md
-  checksum: 7e5b3238dc46b9ced6350861098dee619f68fe8f327af5cc7710134c00b5d4ab
-- filename: openspec/changes/adopt-live-docs/specs/live-docs-traceability/spec.md
-  checksum: 79eb2b98f52242c62388927846073bd48df92e132184de1ef009b7706dd46d7c
-- filename: openspec/changes/adopt-live-docs/tasks.md
-  checksum: 0f107e0c96e19476f0553a96e49b6e6c11c3e08aa86e790ea86666ccb1acf3bb
-- filename: openspec/changes/adopt-live-docs/design.md
-  checksum: 0d3137fcaf84647115c2aa16f103f48e0bfe852d8c4832306683e2487b7508c3
 - filename: openspec/requirement-tags.yml
   checksum: 3fbf94c5eff3f59dc39444d78cb07e8b5670636c7bd110dc5e419eb915466dd5
 - filename: openspec/specs/driver-contract/spec.md
@@ -93,6 +85,8 @@ fileignoreconfig:
   checksum: c97eff29f9fa58f90b7632a9e58c1a44a1536efdc5101088984af3f918eb0a30
 - filename: openspec/specs/greeting/spec.md
   checksum: a555470128358725aa291dee644a18d385ac227b1517ea9777c88b831de05b5a
+- filename: openspec/specs/live-docs-traceability/spec.md
+  checksum: 68ea89e3430b73462456bbd9fdb53dfa87b3a157f0419a43f29414f6edba04f8  
 - filename: spec/bin/repo_trace_merge_spec.rb
   checksum: 59e3a676c88a9cc642f565f6f13cf434e9bbb04e97d64ecfd6102675703129ee
 - filename: spec/ci_workflow_spec.rb
