@@ -34,7 +34,8 @@ RSpec.describe 'Ledger v2' do
   end
 
   describe 'cells' do
-    it 'passes passed, failed, error and not_applicable statuses through' do
+    it 'passes passed, failed, error and not_applicable statuses through',
+       requirement: 'the-suite-derives-a-cross-channel-ledger', scenario: 'merging-two-channel-runs-into-the-ledger' do
       failing = trace_doc(channel: 'http', rows: { 'greeting-happy' => 'error', 'greeting-count' => 'failed' })
 
       expect(build(results: results.merge('http' => failing))['requirements']).to eq(
@@ -43,14 +44,16 @@ RSpec.describe 'Ledger v2' do
       )
     end
 
-    it 'reads missing, not not_applicable, for a requirement with no row' do
+    it 'reads missing, not not_applicable, for a requirement with no row',
+       requirement: 'a-ledger-cell-is-missing-when-no-row-exists', scenario: 'a-requirement-with-no-row' do
       partial = trace_doc(channel: 'http', rows: { 'greeting-happy' => 'passed' })
 
       expect(build(results: results.merge('http' => partial))['requirements']['greeting-count'])
         .to eq('cli' => 'not_applicable', 'http' => 'missing')
     end
 
-    it 'reads missing for every requirement of a known channel that has no result' do
+    it 'reads missing for every requirement of a known channel that has no result',
+       requirement: 'the-suite-derives-a-cross-channel-ledger', scenario: 'a-known-channel-with-no-result' do
       cells = build(results: results.merge('http' => nil))['requirements']
 
       expect(cells.values.map { |row| row['http'] }).to eq(%w[missing missing])
@@ -58,7 +61,9 @@ RSpec.describe 'Ledger v2' do
   end
 
   describe 'columns' do
-    it 'is current when the result is from the ledger suite for the deployed version' do
+    it 'is current when the result is from the ledger suite for the deployed version',
+       requirement: 'a-ledger-column-is-current-stale-or-missing',
+       scenario: 'a-result-for-the-deployed-version-and-current-suite' do
       expect(build['channels']['http']).to include('state' => 'current', 'reasons' => [])
     end
 
@@ -69,11 +74,13 @@ RSpec.describe 'Ledger v2' do
       )
     end
 
-    it 'is missing when the channel has no result' do
+    it 'is missing when the channel has no result',
+       requirement: 'a-ledger-column-is-current-stale-or-missing', scenario: 'a-known-channel-with-no-result' do
       expect(build(results: results.merge('http' => nil))['channels']['http']).to include('state' => 'missing')
     end
 
-    it 'is stale for an older suite version but keeps the last known statuses' do
+    it 'is stale for an older suite version but keeps the last known statuses',
+       requirement: 'a-ledger-column-is-current-stale-or-missing', scenario: 'a-result-from-an-older-suite-version' do
       old = trace_doc(channel: 'http', suite_version: 'v0.1.0')
       doc = build(results: results.merge('http' => old))
 
@@ -81,7 +88,9 @@ RSpec.describe 'Ledger v2' do
       expect(doc['requirements']['greeting-happy']['http']).to eq('passed')
     end
 
-    it 'is stale when a newer version is deployed than the result covers' do
+    it 'is stale when a newer version is deployed than the result covers',
+       requirement: 'a-ledger-column-is-current-stale-or-missing',
+       scenario: 'a-newer-version-is-deployed-than-the-result-covers' do
       newer = deployed_doc(cli: { version: 'v0.1.2' }, http: { version: 'v1.3.0' })
 
       expect(build(deployed: newer)['channels']['http']).to include('state' => 'stale', 'reasons' => ['channel'])
@@ -97,14 +106,16 @@ RSpec.describe 'Ledger v2' do
   end
 
   describe 'determinism' do
-    it 'generates identical output from the same inputs' do
+    it 'generates identical output from the same inputs',
+       requirement: 'ledger-generation-is-deterministic', scenario: 'regenerating-from-the-same-inputs' do
       first = JSON.generate(build)
       second = JSON.generate(build)
 
       expect(second).to eq(first)
     end
 
-    it 'does not depend on the order of the inputs' do
+    it 'does not depend on the order of the inputs',
+       requirement: 'ledger-generation-is-deterministic', scenario: 'input-order-does-not-matter' do
       shuffled = build(results: results.to_a.reverse.to_h, requirements: requirements.reverse, channels: %w[http cli])
 
       expect(JSON.generate(shuffled)).to eq(JSON.generate(build))

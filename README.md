@@ -125,6 +125,43 @@ bundle exec rspec spec/drivers   # the driver contract, per adapter
 bundle exec rubocop              # lint
 ```
 
+### Live docs: the repo trace
+
+greeter-docs shows which requirements exist and whether the tests that verify
+them passed. It reads two things from this repo.
+
+- **The `repo-trace` artifact** (`greeterhq.repo-trace.v1`): RSpec results for the
+  tooling requirements, one per example tagged `requirement:`/`scenario:`. It holds
+  slugs, statuses, locations and run metadata only, never example descriptions. It is
+  separate from `tmp/traceability.json`, which this does not change.
+- **The ledger branches**, for the `greeting` requirements. Those are verified by the
+  Cucumber scenarios, matched through `openspec/requirement-tags.yml`.
+
+CI builds the trace from three jobs: `rspec` (everything except `spec/drivers/`),
+and `drivers`, which runs the driver contract against the latest greeter-cli release
+and the stage http target. The `trace` job merges the three partial traces with
+`bin/merge-repo-trace`. On `main` and on the weekly schedule (Monday 06:17 UTC), when
+every job succeeded, it uploads `repo-trace` (kept 90 days) and `notify-docs` sends
+`repository_dispatch` `docs-refresh` to greeter-docs with `client_payload[repo]`.
+Record mode sends the same event after a successful publish, once per ledger
+environment, with `client_payload[ledger]` as well.
+
+To build the trace locally:
+
+```bash
+REPO_TRACE_PATH=tmp/repo-trace-spec.json bundle exec rspec \
+  --exclude-pattern 'spec/drivers/**/*_spec.rb' --format progress --format RepoTraceFormatter
+GREETER_CLI_CMD=/path/to/greeter REPO_TRACE_PATH=tmp/repo-trace-drivers-cli.json \
+  bundle exec rspec spec/drivers/cli_driver_spec.rb --format RepoTraceFormatter
+GREETER_BASE_URL=https://... REPO_TRACE_PATH=tmp/repo-trace-drivers-http.json \
+  bundle exec rspec spec/drivers/http_driver_spec.rb --format RepoTraceFormatter
+bin/merge-repo-trace tmp/repo-trace.json \
+  tmp/repo-trace-spec.json tmp/repo-trace-drivers-cli.json tmp/repo-trace-drivers-http.json
+```
+
+Every requirement heading needs a verifying test: `spec/trace_check_spec.rb` fails
+when one has none, or when a tag names no heading.
+
 ### Configuration
 
 The composition root (`lib/greeter_acceptance/composition_root.rb`) reads:

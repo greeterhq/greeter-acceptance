@@ -15,14 +15,16 @@ RSpec.describe 'GateVerdict' do
       expect(verdict).to be_passed
     end
 
-    it 'fails when a scenario failed and names the requirement' do
+    it 'fails when a scenario failed and names the requirement',
+       requirement: 'the-gate-fails-only-on-failed-or-error-results', scenario: 'a-failed-or-errored-scenario' do
       trace['results'].first['status'] = 'failed'
 
       expect(verdict).not_to be_passed
       expect(verdict.reasons.join).to include(trace['results'].first['requirement'])
     end
 
-    it 'fails when a scenario errored' do
+    it 'fails when a scenario errored',
+       requirement: 'the-gate-fails-only-on-failed-or-error-results', scenario: 'a-failed-or-errored-scenario' do
       trace['results'].first['status'] = 'error'
 
       expect(verdict).not_to be_passed
@@ -31,7 +33,9 @@ RSpec.describe 'GateVerdict' do
     context 'when some scenarios are not applicable' do
       let(:rows) { { 'greeting-happy' => 'passed', 'greeting-count' => 'not_applicable' } }
 
-      it 'does not fail because of them' do
+      it 'does not fail because of them',
+         requirement: 'the-gate-fails-only-on-failed-or-error-results',
+         scenario: 'only-not-applicable-scenarios-were-skipped' do
         expect(verdict).to be_passed
       end
     end
@@ -41,7 +45,9 @@ RSpec.describe 'GateVerdict' do
     context 'when the observed version differs from the candidate' do
       let(:run) { { channel_version: 'v1.2.2', verification: 'mismatch' } }
 
-      it 'fails and names both versions' do
+      it 'fails and names both versions',
+         requirement: 'the-gate-verifies-the-version-it-tested',
+         scenario: 'the-observed-version-differs-from-the-candidate' do
         expect(verdict).not_to be_passed
         expect(verdict.reasons.join).to include('v1.2.2').and include('v1.2.3')
       end
@@ -58,11 +64,13 @@ RSpec.describe 'GateVerdict' do
     context 'when no version could be observed' do
       let(:run) { { verification: 'unobserved' } }
 
-      it 'fails unless an unverified run is allowed' do
+      it 'fails unless an unverified run is allowed',
+         requirement: 'the-gate-verifies-the-version-it-tested', scenario: 'the-version-cannot-be-observed' do
         expect(verdict).not_to be_passed
       end
 
-      it 'passes and is marked unverified when an unverified run is allowed' do
+      it 'passes and is marked unverified when an unverified run is allowed',
+         requirement: 'the-gate-verifies-the-version-it-tested', scenario: 'an-unverified-run-is-explicitly-allowed' do
         result = verdict(allow_unverified: true)
 
         expect(result).to be_passed
@@ -70,14 +78,16 @@ RSpec.describe 'GateVerdict' do
       end
     end
 
-    it 'is not marked unverified when the version was verified' do
+    it 'is not marked unverified when the version was verified',
+       requirement: 'the-gate-verifies-the-version-it-tested', scenario: 'the-observed-version-matches-the-candidate' do
       expect(verdict).not_to be_unverified
     end
   end
 
   describe 'the acceptance reference' do
     [nil, ''].each do |missing|
-      it "fails when the caller supplies #{missing.inspect}" do
+      it "fails when the caller supplies #{missing.inspect}",
+         requirement: 'the-gate-runs-the-caller-s-pinned-suite-version', scenario: 'no-reference-supplied' do
         result = verdict(acceptance_ref: missing)
 
         expect(result).not_to be_passed

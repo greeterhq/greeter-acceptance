@@ -1,0 +1,10 @@
+#!/bin/sh
+# A stand-in for the greeter CLI, for specs that run Cucumber against the CLI channel.
+#   fake_greeter --version  ->  greeter-cli 0.0.1 (greeter-core 0.0.1)
+#   fake_greeter ""         ->  exit 2 (an invalid name)
+#   fake_greeter NAME       ->  Hello, NAME!
+case "$1" in
+  --version) echo "greeter-cli 0.0.1 (greeter-core 0.0.1)" ;;
+  "") exit 2 ;;
+  *) echo "Hello, $1!" ;;
+esac

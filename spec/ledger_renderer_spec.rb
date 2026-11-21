@@ -65,7 +65,8 @@ RSpec.describe 'LedgerRenderer' do
   end
 
   describe 'safety' do
-    it 'renders markup in a version as plain text' do
+    it 'renders markup in a version as plain text',
+       requirement: 'publishing-treats-the-channel-s-result-as-untrusted-data', scenario: 'text-containing-markup' do
       hostile = 'v1.2.3 <script>alert(1)</script> [x](http://evil.test)'
       ledger['channels']['http']['channel_version'] = hostile
       markdown = renderer.render(ledger)

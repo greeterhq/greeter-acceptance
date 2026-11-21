@@ -1,0 +1,85 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Merges the per-job repo traces (the RSpec run without the driver specs, and the
+# cli and http driver runs) into one greeterhq.repo-trace.v1 file. Used by the CI
+# `trace` job.
+#
+#   bin/merge-repo-trace OUT IN IN...
+#
+# Every input is validated in full (top-level values and every result) before
+# the inputs are compared, so nothing outside the v1 shape is ever published. On
+# any problem it prints one line naming the file and field, exits 1 and writes
+# nothing. Error messages never echo input values, except the requirement slug
+# and location of a duplicated result, which have been validated by then.
+# Standard library only, so CI can run it without a bundle.
+
+require 'json'
+require_relative '../spec/support/repo_trace/document'
+
+# Validates, compares and merges repo-trace files; see the header above.
+module MergeRepoTrace
+  # schema and repo are fixed by validation, so they can't differ between valid inputs.
+  SHARED_FIELDS = %w[sha run_id].freeze
+
+  module_function
+
+  def call(out_path, *input_paths)
+    documents = input_paths.map { |path| load(path) }
+    check_shared_fields(documents)
+    reject_duplicates(documents.flat_map { |document| document['results'] })
+    write(out_path, documents)
+  end
+
+  def load(path)
+    document = begin
+      JSON.parse(File.read(path))
+    rescue JSON::ParserError, SystemCallError
+      raise RepoTrace::Document::Invalid, "#{File.basename(path)}: cannot read JSON"
+    end
+    RepoTrace::Document.validate(document)
+    document
+  rescue RepoTrace::Document::Invalid => e
+    raise if e.message.start_with?("#{File.basename(path)}:")
+
+    raise RepoTrace::Document::Invalid, "#{File.basename(path)}: #{e.message}"
+  end
+
+  def check_shared_fields(documents)
+    first = documents.first
+    SHARED_FIELDS.each do |field|
+      raise RepoTrace::Document::Invalid, "#{field} differs" unless documents.all? { |doc| doc[field] == first[field] }
+    end
+  end
+
+  def reject_duplicates(results)
+    seen = {}
+    results.each do |result|
+      key = RepoTrace::Document.key(result)
+      if seen.key?(key)
+        raise RepoTrace::Document::Invalid,
+              "duplicate result: requirement #{result['requirement']} at #{result['location']}"
+      end
+
+      seen[key] = true
+    end
+  end
+
+  # recorded_at is validated as YYYY-MM-DDTHH:MM:SSZ, so string order is time order.
+  def write(out_path, documents)
+    merged = documents.first.merge('recorded_at' => documents.map { |doc| doc['recorded_at'] }.max,
+                                   'results' => RepoTrace::Document.sort(documents.flat_map { |d| d['results'] }))
+    File.write(out_path, "#{JSON.pretty_generate(merged)}\n")
+  end
+end
+
+if $PROGRAM_NAME == __FILE__
+  abort('usage: bin/merge-repo-trace OUT IN IN...') unless ARGV.size >= 3
+
+  begin
+    MergeRepoTrace.call(*ARGV)
+  rescue RepoTrace::Document::Invalid => e
+    warn("merge-repo-trace: #{e.message}")
+    exit 1
+  end
+end

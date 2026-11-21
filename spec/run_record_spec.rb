@@ -25,11 +25,15 @@ RSpec.describe 'RunRecord' do
       expect(run_record.status_for(failed: false, infrastructure_error: false)).to eq(:passed)
     end
 
-    it 'is failed when an assertion failed and no infrastructure error was seen' do
+    it 'is failed when an assertion failed and no infrastructure error was seen',
+       requirement: 'a-scenario-hit-by-an-infrastructure-error-is-recorded-as-error',
+       scenario: 'a-failed-assertion-is-not-an-error' do
       expect(run_record.status_for(failed: true, infrastructure_error: false)).to eq(:failed)
     end
 
-    it 'is error when an infrastructure error was seen, even if an assertion also failed' do
+    it 'is error when an infrastructure error was seen, even if an assertion also failed',
+       requirement: 'a-scenario-hit-by-an-infrastructure-error-is-recorded-as-error',
+       scenario: 'a-channel-failure-during-a-scenario' do
       expect(run_record.status_for(failed: true, infrastructure_error: true)).to eq(:error)
     end
 
@@ -39,7 +43,9 @@ RSpec.describe 'RunRecord' do
   end
 
   describe '#row' do
-    it 'records the requirement and scenario slugs from the tags with the status' do
+    it 'records the requirement and scenario slugs from the tags with the status',
+       requirement: 'each-run-writes-neutral-per-channel-traceability-rows',
+       scenario: 'a-run-records-one-status-per-scenario' do
       record.row(tag_names: %w[@requirement-greeting-happy @scenario-greet-new-guest], status: :passed)
 
       expect(record.document['results']).to eq(
@@ -47,7 +53,9 @@ RSpec.describe 'RunRecord' do
       )
     end
 
-    it 'records the missing capabilities of a not-applicable row' do
+    it 'records the missing capabilities of a not-applicable row',
+       requirement: 'each-run-writes-neutral-per-channel-traceability-rows',
+       scenario: 'a-not-applicable-row-names-its-missing-capabilities' do
       record.row(
         tag_names: %w[@requirement-greeting-count @scenario-count-new-guest @capability-counting],
         status: :not_applicable, missing_capabilities: [:counting]
@@ -65,7 +73,8 @@ RSpec.describe 'RunRecord' do
   end
 
   describe '#verification' do
-    it 'is unobserved when nothing was observed' do
+    it 'is unobserved when nothing was observed',
+       requirement: 'a-run-is-attributed-to-one-verified-channel-version', scenario: 'no-version-is-observed' do
       expect(record.verification).to eq(:unobserved)
     end
 
@@ -75,7 +84,9 @@ RSpec.describe 'RunRecord' do
       expect(record.verification).to eq(:unobserved)
     end
 
-    it 'is verified when the observed version equals the expected version' do
+    it 'is verified when the observed version equals the expected version',
+       requirement: 'a-run-is-attributed-to-one-verified-channel-version',
+       scenario: 'observed-version-matches-the-expectation' do
       record.observe(build_info('v1.2.3'))
 
       expect(record.verification).to eq(:verified)
@@ -93,13 +104,17 @@ RSpec.describe 'RunRecord' do
       expect(record.verification).to eq(:verified)
     end
 
-    it 'is mismatch when the observed version differs from the expected version' do
+    it 'is mismatch when the observed version differs from the expected version',
+       requirement: 'a-run-is-attributed-to-one-verified-channel-version',
+       scenario: 'observed-version-differs-from-the-expectation' do
       record.observe(build_info('v1.2.2'))
 
       expect(record.verification).to eq(:mismatch)
     end
 
-    it 'is inconsistent when two different versions are observed, even if one matches' do
+    it 'is inconsistent when two different versions are observed, even if one matches',
+       requirement: 'a-run-is-attributed-to-one-verified-channel-version',
+       scenario: 'the-version-changes-during-a-run' do
       record.observe(build_info('v1.2.3'))
       record.observe(build_info('v1.2.4'))
 
@@ -114,21 +129,24 @@ RSpec.describe 'RunRecord' do
       expect(record.document['schema']).to eq('greeterhq.traceability.v2')
     end
 
-    it 'records the run context' do
+    it 'records the run context',
+       requirement: 'each-run-writes-neutral-per-channel-traceability-rows', scenario: 'a-run-records-its-context' do
       expect(record.document['run']).to include(
         'channel' => 'http', 'environment' => 'prod', 'suite_version' => 'v0.2.0',
         'recorded_at' => '2026-11-06T12:00:00Z', 'run_id' => '123456789'
       )
     end
 
-    it 'records the observed versions, the sha and the verification state' do
+    it 'records the observed versions, the sha and the verification state',
+       requirement: 'a-channel-record-carries-its-provenance', scenario: 'a-recorded-result' do
       expect(record.document['run']).to include(
         'channel_version' => 'v1.2.3', 'core_version' => '0.1.5',
         'channel_sha' => 'def4567', 'verification' => 'verified'
       )
     end
 
-    it 'records the release time it is given' do
+    it 'records the release time it is given',
+       requirement: 'a-channel-record-carries-its-provenance', scenario: 'an-artifact-channel-s-release-time' do
       timed = GreeterAcceptance::RunRecord.new(
         channel: :cli, environment: 'prod', suite_version: 'v0.2.0',
         released_at: '2026-11-01T09:30:00Z', clock: clock

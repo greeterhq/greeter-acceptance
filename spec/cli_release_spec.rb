@@ -29,7 +29,9 @@ RSpec.describe 'CliRelease.ruby_version' do
     CliRelease.ruby_version(dir)
   end
 
-  describe 'a requirement it can translate' do
+  describe 'a requirement it can translate',
+           requirement: 'an-artifact-channel-is-gated-under-the-ruby-its-artifact-declares',
+           scenario: 'an-exact-ruby-is-pinned' do
     {
       "ruby '3.3.5'" => '3.3.5',
       "ruby '= 3.3.5'" => '3.3.5',
@@ -53,7 +55,9 @@ RSpec.describe 'CliRelease.ruby_version' do
     end
   end
 
-  describe 'no requirement' do
+  describe 'no requirement',
+           requirement: 'an-artifact-channel-is-gated-under-the-ruby-its-artifact-declares',
+           scenario: 'no-ruby-is-declared' do
     it 'is nil when the Gemfile has no ruby line' do
       expect(version_for("gem 'greeter-core', '~> 0.1'")).to be_nil
     end
@@ -67,7 +71,9 @@ RSpec.describe 'CliRelease.ruby_version' do
     end
   end
 
-  describe 'a requirement it refuses' do
+  describe 'a requirement it refuses',
+           requirement: 'an-untranslatable-ruby-requirement-fails-the-gate-before-install',
+           scenario: 'a-requirement-that-cannot-be-translated' do
     [
       "ruby '3.3'",
       "ruby '= 3.3'",
@@ -85,13 +91,17 @@ RSpec.describe 'CliRelease.ruby_version' do
       end
     end
 
-    it 'refuses a Gemfile with two ruby lines, naming the second' do
+    it 'refuses a Gemfile with two ruby lines, naming the second',
+       requirement: 'an-untranslatable-ruby-requirement-fails-the-gate-before-install',
+       scenario: 'more-than-one-ruby-line' do
       expect { version_for("ruby '3.3.5'\nruby '3.3.6'") }
         .to raise_error(failure, "unsupported ruby requirement in Gemfile: ruby '3.3.6'")
     end
   end
 
-  describe 'the line it names' do
+  describe 'the line it names',
+           requirement: 'only-a-plain-version-reaches-the-ruby-installer',
+           scenario: 'a-gemfile-line-with-control-characters' do
     def refusal_for(body)
       version_for(body)
       nil
@@ -119,7 +129,9 @@ RSpec.describe 'CliRelease.ruby_version' do
     end
   end
 
-  describe 'a Gemfile it will not read' do
+  describe 'a Gemfile it will not read',
+           requirement: 'an-unreadable-gemfile-fails-the-gate-before-install',
+           scenario: 'the-gemfile-is-a-link-or-a-special-file' do
     it 'refuses a Gemfile that is a symbolic link, without reading its target' do
       File.write(File.join(dir, 'Gemfile.real'), "ruby '~> 3.3.5'\n")
       File.symlink(File.join(dir, 'Gemfile.real'), gemfile)
@@ -188,8 +200,9 @@ RSpec.describe 'CliRelease.ruby_version' do
 
   # harden-candidate-install: the candidate is installed exactly as its own
   # Gemfile.lock pins it, or not at all. The Gemfile has no gems, so no network
-  # is needed.
-  describe 'install' do
+  # is needed. The same install serves the gate and record mode, so the examples
+  # are shared and included once for each requirement that states the behaviour.
+  shared_examples 'a frozen candidate install' do
     let(:launcher) { File.join(dir, 'launcher') }
     let(:lockfile) { File.join(dir, 'Gemfile.lock') }
     let(:bundler_env) do
@@ -224,6 +237,20 @@ RSpec.describe 'CliRelease.ruby_version' do
 
       expect(CliRelease.install(dir: dir, launcher: launcher)).to eq(File.expand_path(launcher))
       expect(File.executable?(launcher)).to be(true)
+    end
+  end
+
+  describe 'install' do
+    context 'when the gate installs the candidate',
+            requirement: 'an-artifact-channel-s-candidate-is-installed-exactly-as-locked',
+            scenario: 'a-candidate-without-a-lockfile' do
+      it_behaves_like 'a frozen candidate install'
+    end
+
+    context 'when a record run installs the release',
+            requirement: 'a-record-run-installs-an-artifact-channel-s-release-exactly-as-locked',
+            scenario: 'a-release-whose-lockfile-is-missing-or-out-of-date' do
+      it_behaves_like 'a frozen candidate install'
     end
   end
 end

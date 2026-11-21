@@ -4,7 +4,7 @@
 # the result on the ledger branch for the environment. Three stages, so the stage
 # that can write is never the stage that runs code:
 #
-#   resolve ──── run (matrix) ──── publish (matrix)
+#   resolve ──── run (matrix) ──── publish (matrix) ──── notify-docs (matrix)
 #
 #   resolve   read-only. Decides what to test and which suite tag to use.
 #   run       read-only. Runs the suite at that tag against one channel and
@@ -12,6 +12,9 @@
 #   publish   the only write access. Standard-library Ruby only: no gems are
 #             installed and no code from the channel under test runs. It treats
 #             the trace as data, validates it, and pushes it to the ledger branch.
+#   notify-docs  after every publish leg succeeded, asks greeter-docs to refresh
+#             once per ledger environment. Its own dispatch token; never the
+#             ledger-writer token.
 #
 # Triggers:
 #   repository_dispatch  channel-released  a channel announces a release
@@ -78,6 +81,8 @@ jobs:
       matrix: ${{ steps.resolve.outputs.matrix }}
       suite_tag: ${{ steps.resolve.outputs.suite_tag }}
       has_work: ${{ steps.resolve.outputs.has_work }}
+      # The distinct ledger environments of the matrix, for notify-docs.
+      environments: ${{ steps.resolve.outputs.environments }}
 
     steps:
       # Full history and tags: the latest suite tag is chosen from the tags, and
@@ -145,6 +150,7 @@ jobs:
             echo "matrix=$(ruby -rjson -e 'puts JSON.generate(JSON.parse(File.read(ARGV[0]))["matrix"])' "$RUNNER_TEMP/resolved.json")"
             echo "suite_tag=$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["suite_tag"]' "$RUNNER_TEMP/resolved.json")"
             echo "has_work=$(ruby -rjson -e 'puts !JSON.parse(File.read(ARGV[0]))["matrix"]["include"].empty?' "$RUNNER_TEMP/resolved.json")"
+            echo "environments=$(ruby -rjson -e 'puts JSON.generate(JSON.parse(File.read(ARGV[0]))["matrix"]["include"].map { |entry| entry["environment"] }.uniq)' "$RUNNER_TEMP/resolved.json")"
           } >> "$GITHUB_OUTPUT"
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -352,3 +358,44 @@ jobs:
             --environment "$ENVIRONMENT" --suite-version "$SUITE_TAG" \
             --channel "$CHANNEL" --version "$VERSION" --sha "$SHA" --run-id "$RUN_ID" \
             "${flags[@]}"
+
+# ═════════════════════════════════════════════════════════════════════════════
+# notify-docs  (ask greeter-docs to refresh, once per ledger environment)
+# ═════════════════════════════════════════════════════════════════════════════
+  notify-docs:
+    name: Notify greeter-docs (${{ matrix.environment }})
+    needs: [resolve, publish]
+    # Only when every publish leg succeeded. A publish that was skipped (no work)
+    # or failed sends nothing; the next run refreshes.
+    if: always() && needs.publish.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions: {}
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ${{ fromJSON(needs.resolve.outputs.environments) }}
+
+    steps:
+      # Its own token, minted here, for greeter-docs only. The ledger-writer token
+      # stays in the publish job.
+      - name: Mint the greeterhq-dispatch token
+        id: dispatch-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.DISPATCH_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DISPATCH_APP_PRIVATE_KEY }}
+          owner: greeterhq
+          repositories: greeter-docs
+          permission-contents: write
+
+      # The environment was validated by bin/resolve against the committed
+      # configuration before it reached the matrix.
+      - name: Send docs-refresh
+        env:
+          GH_TOKEN: ${{ steps.dispatch-token.outputs.token }}
+          ENVIRONMENT: ${{ matrix.environment }}
+        run: >-
+          gh api repos/greeterhq/greeter-docs/dispatches
+          -f event_type=docs-refresh
+          -f 'client_payload[repo]=greeter-acceptance'
+          -f "client_payload[ledger]=$ENVIRONMENT"

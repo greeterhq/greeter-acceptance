@@ -8,7 +8,9 @@ RSpec.describe 'Publisher' do
       expect { publish_result }.to change { branch_exists?(remote, 'ledger-prod') }.from(false).to(true)
     end
 
-    it 'publishes the channel result, the deployed record and both generated views' do
+    it 'publishes the channel result, the deployed record and both generated views',
+       requirement: 'a-ledger-branch-holds-source-records-and-generated-views',
+       scenario: 'the-contents-of-a-ledger-branch' do
       publish_result
 
       expect(branch_files(remote, 'ledger-prod'))
@@ -40,7 +42,9 @@ RSpec.describe 'Publisher' do
         .to eq('cli' => 'v0.1.2', 'http' => 'v1.2.3')
     end
 
-    it 'regenerates the ledger and its rendering from every record on the branch' do
+    it 'regenerates the ledger and its rendering from every record on the branch',
+       requirement: 'a-ledger-branch-holds-source-records-and-generated-views',
+       scenario: 'generated-views-match-the-records' do
       publish_result(channel: 'http')
       publish_result(channel: 'cli', version: 'v0.1.2')
 
@@ -48,7 +52,8 @@ RSpec.describe 'Publisher' do
       expect(branch_file(remote, 'ledger-prod', 'LEDGER.md')).to include('v0.1.2').and include('v1.2.3')
     end
 
-    it 'makes no commit when nothing would change' do
+    it 'makes no commit when nothing would change',
+       requirement: 'publishing-regenerates-the-generated-views-from-the-records', scenario: 'nothing-would-change' do
       publish_result
       commits = commit_count(remote, 'ledger-prod')
 
@@ -58,7 +63,9 @@ RSpec.describe 'Publisher' do
   end
 
   describe 'replacing results' do
-    it 'replaces a passed result with an error result' do
+    it 'replaces a passed result with an error result',
+       requirement: 'a-scenario-hit-by-an-infrastructure-error-is-recorded-as-error',
+       scenario: 'an-error-replaces-an-earlier-pass' do
       publish_result(version: 'v1.2.3')
       publish_result(version: 'v1.2.4', rows: { 'greeting-happy' => 'error', 'greeting-count' => 'error' })
 
@@ -66,7 +73,8 @@ RSpec.describe 'Publisher' do
     end
 
     %w[error failed].each do |status|
-      it "still records the deployed version when every scenario #{status}" do
+      it "still records the deployed version when every scenario #{status}",
+         requirement: 'the-deployed-record-is-updated-regardless-of-test-outcome', scenario: 'tests-fail' do
         publish_result(version: 'v1.2.5', rows: { 'greeting-happy' => status, 'greeting-count' => status })
 
         expect(stored('deployed.json')['channels']['http']['version']).to eq('v1.2.5')
@@ -87,7 +95,9 @@ RSpec.describe 'Publisher' do
     end
     let(:publisher) { build_publisher(before_push: interfering) }
 
-    it 'retries by re-reading the branch, re-applying its change and regenerating' do
+    it 'retries by re-reading the branch, re-applying its change and regenerating',
+       requirement: 'publishing-regenerates-the-generated-views-from-the-records',
+       scenario: 'the-branch-moved-on-during-publishing' do
       publish_result(channel: 'http', publisher: publisher)
 
       expect(publisher.attempts).to eq(2)
@@ -101,7 +111,9 @@ RSpec.describe 'Publisher' do
       expect(merge_commits(remote, 'ledger-prod')).to be_empty
     end
 
-    it 'converges when two channels publish at the same time' do
+    it 'converges when two channels publish at the same time',
+       requirement: 'publishing-regenerates-the-generated-views-from-the-records',
+       scenario: 'two-channels-publish-at-the-same-time' do
       remote
       threads = [['http', 'v1.2.3'], ['cli', 'v0.1.2']].map do |channel, version|
         Thread.new do
