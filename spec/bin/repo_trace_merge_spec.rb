@@ -75,13 +75,15 @@ RSpec.describe 'bin/merge-repo-trace' do
     )
   end
 
-  %w[schema repo sha run_id].each do |field|
+  # Only sha and run_id are compared across inputs: schema and repo are fixed by
+  # validation (see the validation cases below), so valid inputs cannot differ in them.
+  %w[sha run_id].each do |field|
     it "refuses inputs that differ in #{field}, names the field and writes no output file",
        requirement: 'per-job-traces-merge-into-one-trace', scenario: 'merge-rejects-mismatched-inputs' do
-      other = { 'schema' => 'greeterhq.repo-trace.v1', 'repo' => 'greeter-core',
-                'sha' => 'fedcba9876543210fedcba9876543210fedcba98', 'run_id' => '111' }
+      # A value for each field that differs from the one in spec_trace and cli_trace.
+      other = { 'sha' => 'fedcba9876543210fedcba9876543210fedcba98', 'run_id' => '111' }
       odd = write_trace('odd.json', document(results: [result(requirement: 'req-z', location: 'spec/z_spec.rb:1')],
-                                             field => other.fetch(field, 'greeterhq.repo-trace.v2')))
+                                             field => other.fetch(field)))
       _stdout, stderr, status = merge(spec_trace, cli_trace, odd)
 
       expect(status.exitstatus).to eq(1)
@@ -101,29 +103,31 @@ RSpec.describe 'bin/merge-repo-trace' do
   end
 
   {
-    'an unknown top-level key' => [{ 'extra' => 'x' }, 'extra'],
-    'a status outside passed, failed, pending and skipped' => [
+    'whose schema is not greeterhq.repo-trace.v1' => [{ 'schema' => 'greeterhq.repo-trace.v2' }, 'schema'],
+    'whose repo is not greeter-acceptance' => [{ 'repo' => 'greeter-core' }, 'repo'],
+    'with an unknown top-level key' => [{ 'extra' => 'x' }, 'extra'],
+    'with a status outside passed, failed, pending and skipped' => [
       { 'results' => [{ 'requirement' => 'r', 'scenario' => 's', 'status' => 'error', 'source' => 'rspec',
                         'location' => 'spec/a_spec.rb:1' }] }, 'status'
     ],
-    'a source other than rspec' => [
+    'with a source other than rspec' => [
       { 'results' => [{ 'requirement' => 'r', 'scenario' => 's', 'status' => 'passed', 'source' => 'cucumber',
                         'location' => 'spec/a_spec.rb:1' }] }, 'source'
     ],
-    'a result with an extra key' => [
+    'with a result with an extra key' => [
       { 'results' => [{ 'requirement' => 'r', 'scenario' => 's', 'status' => 'passed', 'source' => 'rspec',
                         'location' => 'spec/a_spec.rb:1', 'description' => 'Alice Smith' }] }, 'description'
     ],
-    'a requirement that is not a slug' => [
+    'with a requirement that is not a slug' => [
       { 'results' => [{ 'requirement' => 'Alice Smith', 'scenario' => 's', 'status' => 'passed',
                         'source' => 'rspec', 'location' => 'spec/a_spec.rb:1' }] }, 'requirement'
     ],
-    'a location outside spec/' => [
+    'with a location outside spec/' => [
       { 'results' => [{ 'requirement' => 'r', 'scenario' => 's', 'status' => 'passed', 'source' => 'rspec',
                         'location' => '../etc/passwd:1' }] }, 'location'
     ]
   }.each do |description, (override, field)|
-    it "refuses an input with #{description}, names the file and field and writes no output file",
+    it "refuses an input #{description}, names the file and field and writes no output file",
        requirement: 'per-job-traces-merge-into-one-trace', scenario: 'merge-rejects-inputs-outside-the-v1-shape' do
       bad = write_trace('bad.json', document(results: [result(requirement: 'req-z', location: 'spec/z_spec.rb:1')])
                                       .merge(override))
