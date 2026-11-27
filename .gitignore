@@ -1,2 +1,5 @@
 # Benchmarks output
 /tmp/
+# Pact files written by `bundle exec rspec -t pact spec/pact/providers`;
+# CI publishes them from the run's artifact, never from git.
+/pacts/

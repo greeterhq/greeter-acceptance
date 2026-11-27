@@ -11,3 +11,5 @@ group :development do
   gem 'rubocop', require: false
   gem 'rubocop-rspec', require: false
 end
+
+gem 'pact', '~> 2.1', group: :test

@@ -24,4 +24,10 @@ RSpec.configure do |config|
   end
 
   config.shared_context_metadata_behavior = :apply_to_host_groups
+
+  # add-pact-consumer: the Pact consumer specs run only on request
+  # (`bundle exec rspec -t pact spec/pact/providers`). Excluded here, not only by
+  # the pact gem, so the default run skips any :pact example even when the gem
+  # is not loaded. Selecting the tag with -t lifts this exclusion.
+  config.filter_run_excluding :pact
 end
