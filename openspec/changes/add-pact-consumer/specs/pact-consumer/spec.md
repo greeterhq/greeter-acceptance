@@ -127,10 +127,11 @@ tagged commit is an ancestor of `origin/main`. It SHALL then publish without
 
 ### Requirement: The broker token reaches only the publish steps
 `PACT_BROKER_TOKEN` SHALL be an environment secret of the `pact-broker` GitHub
-Environment, used only by the `pact-publish` job. It SHALL be read from
-`secrets` only in the step-level `env:` of the steps that run `pact-broker`, and
-SHALL reach the container by name only. No job-level or workflow-level `env:`,
-no `run:` text and no other step SHALL reference it.
+Environment, used only by the `pact-publish` job. A step SHALL receive it only
+through its own `env:`, and only if the step runs `pact-broker`. Docker SHALL
+receive it by name with `-e PACT_BROKER_TOKEN`. No job-level or workflow-level
+`env:` and no other step SHALL reference it, and no `run:` text SHALL contain
+the expression `secrets.PACT_BROKER_TOKEN`.
 
 #### Scenario: The token is scoped to the pact-broker steps
 - **WHEN** `.github/workflows/ci.yml` is parsed

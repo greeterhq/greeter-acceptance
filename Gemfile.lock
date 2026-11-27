@@ -41,12 +41,23 @@ GEM
     memoist3 (1.0.0)
     mini_mime (1.1.5)
     multi_test (1.1.0)
+    pact (2.1.2)
+      pact-ffi (~> 0.5.8)
+      rack
+      rack-proxy
+      webrick (~> 1.8)
+      zeitwerk (~> 2.3)
+    pact-ffi (0.5.8.1-arm64-darwin)
+      ffi (~> 1.15)
     parallel (2.3.0)
     parser (3.3.12.0)
       ast (~> 2.4.1)
       racc
     prism (1.9.0)
     racc (1.8.1)
+    rack (3.2.9)
+    rack-proxy (2.0.2)
+      rack (>= 2.0, < 4)
     rainbow (3.1.1)
     regexp_parser (2.13.1)
     rspec (3.13.2)
@@ -88,6 +99,8 @@ GEM
     unicode-display_width (3.3.0)
       unicode-emoji (~> 4.3)
     unicode-emoji (4.3.0)
+    webrick (1.9.2)
+    zeitwerk (2.8.3)
 
 PLATFORMS
   arm64-darwin
@@ -96,6 +109,7 @@ PLATFORMS
 DEPENDENCIES
   bundler-audit
   cucumber (~> 9.2)
+  pact (~> 2.1)
   rspec (~> 3.13)
   rubocop
   rubocop-rspec
@@ -123,10 +137,14 @@ CHECKSUMS
   memoist3 (1.0.0) sha256=686e42402cf150a362050c23143dc57b0ef88f8c344943ff8b7845792b50d56f
   mini_mime (1.1.5) sha256=8681b7e2e4215f2a159f9400b5816d85e9d8c6c6b491e96a12797e798f8bccef
   multi_test (1.1.0) sha256=e9e550cdd863fb72becfe344aefdcd4cbd26ebf307847f4a6c039a4082324d10
+  pact (2.1.2)
+  pact-ffi (0.5.8.1-arm64-darwin)
   parallel (2.3.0) sha256=f75a3e904101ce6a1ccb6b8dc800cbafd42166d83330192438dcf29395167a6f
   parser (3.3.12.0) sha256=21a6d7f755d5a24dfbdc6e6b772e4e879a52e7631a88bc5a3a134606052c9828
   prism (1.9.0) sha256=7b530c6a9f92c24300014919c9dcbc055bf4cdf51ec30aed099b06cd6674ef85
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
+  rack (3.2.9) sha256=8235c1d08f0c461bedcff4413bbeba888173e5b09e1332ae951c98f0ee460dcc
+  rack-proxy (2.0.2)
   rainbow (3.1.1) sha256=039491aa3a89f42efa1d6dec2fc4e62ede96eb6acd95e52f1ad581182b79bc6a
   regexp_parser (2.13.1) sha256=5aedb6b7c35688f51e86eef17a15374dfd287c83f4ca644b2c5f3ec50a33b44b
   rspec (3.13.2) sha256=206284a08ad798e61f86d7ca3e376718d52c0bc944626b2349266f239f820587
@@ -142,6 +160,8 @@ CHECKSUMS
   thor (1.5.0) sha256=e3a9e55fe857e44859ce104a84675ab6e8cd59c650a49106a05f55f136425e73
   unicode-display_width (3.3.0) sha256=4b7aa66a4b11db50f6f7e98411215cd0dd10eaecb665d36eec5bcacb3fa0b613
   unicode-emoji (4.3.0) sha256=11c02fa73290378c066bb0562cd4c87d8e1b706fbbe0059ca12746a4244de8ce
+  webrick (1.9.2)
+  zeitwerk (2.8.3)
 
 BUNDLED WITH
   4.0.22
