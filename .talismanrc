@@ -79,16 +79,6 @@ fileignoreconfig:
   checksum: f74747f71ff593cf0c2afa4098aaf1eb3630654a9b8e979a851574add4d23131
 - filename: lib/greeter_acceptance/run_record.rb
   checksum: 1214970e365c8f44cea9495dace57892b27b86deee08426b6c5591dc2b807ca5
-- filename: openspec/changes/add-pact-consumer/specs/live-docs-traceability/spec.md
-  checksum: 67b1ca5809b4afe5ba23800f07ff5fc062ccd1bf6c6b323799729d932787c80e
-- filename: openspec/changes/add-pact-consumer/proposal.md
-  checksum: c360b7fe656a3c492cda013c5f925c4dcc4349d9ccb493d859ee00cbb61556b6
-- filename: openspec/changes/add-pact-consumer/specs/pact-consumer/spec.md
-  checksum: 606500702d77ed00a3b26687c5b53699da37af43aa53587a6e098de61f667902
-- filename: openspec/changes/add-pact-consumer/tasks.md
-  checksum: 271cf3269f1e4b82df9c930b9a66608a306db7c376375cd96df4c5f196722af9
-- filename: openspec/changes/add-pact-consumer/design.md
-  checksum: b55667749f9d74bf0926ce7871e647ce03c41ed60fe652180a973b79fca6c6db
 - filename: openspec/requirement-tags.yml
   checksum: 3fbf94c5eff3f59dc39444d78cb07e8b5670636c7bd110dc5e419eb915466dd5
 - filename: openspec/specs/driver-contract/spec.md
@@ -98,7 +88,9 @@ fileignoreconfig:
 - filename: openspec/specs/greeting/spec.md
   checksum: a555470128358725aa291dee644a18d385ac227b1517ea9777c88b831de05b5a
 - filename: openspec/specs/live-docs-traceability/spec.md
-  checksum: 68ea89e3430b73462456bbd9fdb53dfa87b3a157f0419a43f29414f6edba04f8  
+  checksum: 68ea89e3430b73462456bbd9fdb53dfa87b3a157f0419a43f29414f6edba04f8
+- filename: openspec/specs/pact-consumer/spec.md
+  checksum: dca8428dc8b4c47c268157eb5c2cdc621151212e6ae01f2b9f68c85a77c2f384
 - filename: spec/bin/repo_trace_merge_spec.rb
   checksum: 59e3a676c88a9cc642f565f6f13cf434e9bbb04e97d64ecfd6102675703129ee
 - filename: spec/ci_workflow_spec.rb
