@@ -98,7 +98,9 @@ fileignoreconfig:
 - filename: openspec/specs/greeting/spec.md
   checksum: a555470128358725aa291dee644a18d385ac227b1517ea9777c88b831de05b5a
 - filename: openspec/specs/live-docs-traceability/spec.md
-  checksum: 68ea89e3430b73462456bbd9fdb53dfa87b3a157f0419a43f29414f6edba04f8  
+  checksum: 68ea89e3430b73462456bbd9fdb53dfa87b3a157f0419a43f29414f6edba04f8
+- filename: openspec/specs/pact-consumer/spec.md
+  checksum: dca8428dc8b4c47c268157eb5c2cdc621151212e6ae01f2b9f68c85a77c2f384
 - filename: spec/bin/repo_trace_merge_spec.rb
   checksum: 59e3a676c88a9cc642f565f6f13cf434e9bbb04e97d64ecfd6102675703129ee
 - filename: spec/ci_workflow_spec.rb
