@@ -52,7 +52,7 @@ fileignoreconfig:
 - filename: .kiro/skills/openspec-verify-change/SKILL.md
   checksum: d48ac81ec022b040f1ac05525894fa5067e40c7651d1fbd2a427df5aa0907b69
 - filename: Gemfile.lock
-  checksum: 877c0d960ee2a54b0ea29b7fc865ec6283885fcc6b444a0f756ae8dcc301fa4a
+  checksum: fa38e31649e6677978992ff2af8c28ad838b471131aa6910e2b58254ed4d0422
 - filename: README.md
   checksum: 72f8169622d3af0a88c1e68458affe9f67b6d20088b9fb0e3b096674937ea35d
 - filename: bin/gate-verdict
