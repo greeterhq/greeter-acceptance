@@ -430,5 +430,9 @@ prod.
 Filled in during apply (task 4.1), from
 `docker buildx imagetools inspect pactfoundation/pact-cli:<tag>`:
 
-- Tag: _to be recorded_
-- Digest: _to be recorded_ (`sha256:…`, the manifest-list digest printed as `Digest:`)
+- Tag: `1.5.0.5`, the latest release tag on Docker Hub when this was applied.
+  `latest` pointed to the same linux/amd64 and linux/arm64 images.
+- Digest: `sha256:77b98079e5be279353f61e116a0b9b3af19e55b215532b30d430ff5df66e5ac9`.
+  This is the OCI image-index digest printed as `Digest:`. It covers
+  linux/amd64 (`sha256:09a1ae00…5509`) and linux/arm64 (`sha256:b4dd2f80…c7ba`).
+- `PACT_CLI_IMAGE: pactfoundation/pact-cli:1.5.0.5@sha256:77b98079e5be279353f61e116a0b9b3af19e55b215532b30d430ff5df66e5ac9`

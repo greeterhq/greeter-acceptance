@@ -1,6 +1,6 @@
 fileignoreconfig:
 - filename: .github/workflows/ci.yml
-  checksum: e66f70b5ae6f2e6d1fbd4b6191b06adcefbeae96f018a7cac5880630cd63ba13
+  checksum: 7db68abc0b60fe36871f6af0a1afe413aa59936995022ad53b6e7e3b7110215c
 - filename: .github/workflows/record.yml
   checksum: df262a92232d5d26d7e06379c22fd9caeb437ee4efa7b0acc5526066017f07b1
 - filename: .kiro/prompts/opsx-apply.prompt.md
@@ -53,6 +53,8 @@ fileignoreconfig:
   checksum: d48ac81ec022b040f1ac05525894fa5067e40c7651d1fbd2a427df5aa0907b69
 - filename: Gemfile.lock
   checksum: 877c0d960ee2a54b0ea29b7fc865ec6283885fcc6b444a0f756ae8dcc301fa4a
+- filename: README.md
+  checksum: 72f8169622d3af0a88c1e68458affe9f67b6d20088b9fb0e3b096674937ea35d
 - filename: bin/gate-verdict
   checksum: 196b086c5686f3282dd3ffc30c60d85515d1eaf29bf83a99de28c703252c3a0e
 - filename: bin/merge-repo-trace
@@ -84,9 +86,9 @@ fileignoreconfig:
 - filename: openspec/changes/add-pact-consumer/specs/pact-consumer/spec.md
   checksum: 606500702d77ed00a3b26687c5b53699da37af43aa53587a6e098de61f667902
 - filename: openspec/changes/add-pact-consumer/tasks.md
-  checksum: 36b4f5045ff9b03492d79b227c2b9a48f9c65494075c50a6d208c86d7c4a5cc2
+  checksum: 271cf3269f1e4b82df9c930b9a66608a306db7c376375cd96df4c5f196722af9
 - filename: openspec/changes/add-pact-consumer/design.md
-  checksum: 5aebe3da504a9b8c233e7825006a85aab55d2ec2e41d9d22ba49ce8e230ff4ac
+  checksum: b55667749f9d74bf0926ce7871e647ce03c41ed60fe652180a973b79fca6c6db
 - filename: openspec/requirement-tags.yml
   checksum: 3fbf94c5eff3f59dc39444d78cb07e8b5670636c7bd110dc5e419eb915466dd5
 - filename: openspec/specs/driver-contract/spec.md

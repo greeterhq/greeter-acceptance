@@ -137,10 +137,13 @@ them passed. It reads two things from this repo.
 - **The ledger branches**, for the `greeting` requirements. Those are verified by the
   Cucumber scenarios, matched through `openspec/requirement-tags.yml`.
 
-CI builds the trace from three jobs: `rspec` (everything except `spec/drivers/`),
-and `drivers`, which runs the driver contract against the latest greeter-cli release
-and the stage http target. The `trace` job merges the three partial traces with
-`bin/merge-repo-trace`. On `main` and on the weekly schedule (Monday 06:17 UTC), when
+CI builds the trace from three jobs:
+- `rspec` runs everything except `spec/drivers/` and the `:pact` specs.
+- `drivers` runs the driver contract against the latest greeter-cli release and
+  the stage http target.
+- `pact` runs the Pact consumer specs (see "Pact consumer" below).
+
+The `trace` job merges the four partial traces with `bin/merge-repo-trace`. On `main` and on the weekly schedule (Monday 06:17 UTC), when
 every job succeeded, it uploads `repo-trace` (kept 90 days) and `notify-docs` sends
 `repository_dispatch` `docs-refresh` to greeter-docs with `client_payload[repo]`.
 Record mode sends the same event after a successful publish, once per ledger
@@ -155,12 +158,75 @@ GREETER_CLI_CMD=/path/to/greeter REPO_TRACE_PATH=tmp/repo-trace-drivers-cli.json
   bundle exec rspec spec/drivers/cli_driver_spec.rb --format RepoTraceFormatter
 GREETER_BASE_URL=https://... REPO_TRACE_PATH=tmp/repo-trace-drivers-http.json \
   bundle exec rspec spec/drivers/http_driver_spec.rb --format RepoTraceFormatter
+REPO_TRACE_PATH=tmp/repo-trace-pact.json bundle exec rspec -t pact spec/pact/providers \
+  --format progress --format RepoTraceFormatter
 bin/merge-repo-trace tmp/repo-trace.json \
-  tmp/repo-trace-spec.json tmp/repo-trace-drivers-cli.json tmp/repo-trace-drivers-http.json
+  tmp/repo-trace-spec.json tmp/repo-trace-drivers-cli.json tmp/repo-trace-drivers-http.json \
+  tmp/repo-trace-pact.json
 ```
 
 Every requirement heading needs a verifying test: `spec/trace_check_spec.rb` fails
 when one has none, or when a tag names no heading.
+
+### Pact consumer
+
+HttpDriver is the Pact consumer `greeter-acceptance` of the provider
+`greeter-http`. The consumer spec, `spec/pact/providers/greeter_http_spec.rb`,
+drives the real driver against the Pact mock server. The driver comes from the
+composition root, as everywhere else. The spec records three interactions:
+
+| Provider state | Request | Response |
+| --- | --- | --- |
+| `no greetings for ada` | `POST /greetings {"name":"ada"}`, any UUID `Idempotency-Key` | 201 |
+| `ada has been greeted with key 0b0e3a52-6f1c-4b8e-9d2a-2f3c1e4d5a6b` | the same request with that key | 200 |
+| `any state` | `POST /greetings {"name":""}` | 422 `{"error":"invalid_name"}` |
+
+- **Request headers:** every request carries `X-Greeter-Synthetic: true` and an
+  `Idempotency-Key`, because the driver always sends both.
+- **Success body:** `guest_name`, `greeting`, `count` (an integer) and
+  `greeted_at` (ISO-8601).
+- **Version headers:** both success responses carry `X-Greeter-Version` and
+  `X-Greeter-Core-Version` matching `^\d+\.\d+\.\d+$`.
+- **Matching:** values the provider chooses are matched by type or pattern,
+  never by exact value.
+
+There is no interaction for the 400 `missing_idempotency_key` response. The
+driver always sends a key, and a consumer contract describes only requests the
+consumer makes.
+
+The pact specs are tagged `:pact` and excluded from a plain `bundle exec rspec`.
+Run them with:
+
+```bash
+bundle exec rspec -t pact spec/pact/providers
+```
+
+The run writes `pacts/greeter-acceptance-greeter-http.json`. git ignores it,
+and each run starts from no earlier file.
+
+CI (`ci.yml`) runs the pact specs in the `pact` job on every trigger, pull
+requests included, with no secrets. The `pact-publish` job is the only place
+the pact reaches the Pact Broker:
+
+- **Push to `main`:** it publishes with `--consumer-app-version $GITHUB_SHA
+  --branch main`.
+- **Push of a `v*` suite tag:** it first fails unless the tagged commit is on
+  `origin/main` and the tag equals `v` + `GreeterAcceptance::VERSION`. It then
+  publishes without a branch, and records `greeter-acceptance` at that sha as
+  deployed to `stage` and to `prod`. A suite tag is what the channel gates run.
+- **Pull requests and the weekly schedule:** never publish.
+
+Before any step that has the token, the job checks that the downloaded pacts
+are exactly the `greeter-acceptance` to `greeter-http` pact, and that the broker
+URL uses `https://`. It uses the pinned `pactfoundation/pact-cli` image
+(`PACT_CLI_IMAGE`, a tag plus digest).
+
+The two broker settings:
+
+| Setting | Where | Used by |
+| --- | --- | --- |
+| `PACT_BROKER_BASE_URL` | repository variable | the `pact-broker` steps and the URL check |
+| `PACT_BROKER_TOKEN` | secret of the `pact-broker` environment (main and `v*` tags only) | the `pact-broker` steps, through their own `env:` |
 
 ### Configuration
 
