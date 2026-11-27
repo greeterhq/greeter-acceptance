@@ -3,13 +3,13 @@
   "run": {
     "channel": "cli",
     "environment": "prod",
-    "suite_version": "v0.3.0",
+    "suite_version": "v0.4.0",
     "channel_version": "v0.1.12",
     "channel_sha": "7970a538d0fc78d7d7bb33980ec9e1644b5bf0a7",
     "core_version": "0.1.3",
     "verification": "verified",
-    "recorded_at": "2026-11-21T08:52:38Z",
-    "run_id": "44886860348",
+    "recorded_at": "2026-11-27T13:06:06Z",
+    "run_id": "46004079562",
     "released_at": "2026-11-13T12:38:36Z",
     "forced": null
   },
